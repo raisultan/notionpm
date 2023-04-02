@@ -76,6 +76,71 @@ async def tg_list_databases(message: types.Message):
         answer += f'{database.title}\n'
     await message.answer(answer)
 
+# LOGIN
 
-if __name__ == '__main__':
+import os
+import logging
+from aiohttp import web
+from aiogram import Bot, Dispatcher, types
+from aiogram.dispatcher import FSMContext
+from urllib.parse import urlencode
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+# Set up Notion integration details
+NOTION_CLIENT_ID = os.environ["NOTION_CLIENT_ID"]
+NOTION_CLIENT_SECRET = os.environ["NOTION_CLIENT_SECRET"]
+NOTION_REDIRECT_URI = os.environ["NOTION_REDIRECT_URI"]
+
+# Define state for the OAuth flow
+class AuthState(FSMContext):
+    pass
+
+# Define start command for the bot
+@dp.message_handler(commands=["start"])
+async def start(message: types.Message, state: AuthState):
+    # Generate URL to start OAuth flow
+    params = {
+        "client_id": NOTION_CLIENT_ID,
+        "redirect_uri": NOTION_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "read_write",
+    }
+    url = "https://api.notion.com/v1/oauth/authorize?" + urlencode(params)
+
+    # Save state and send user to Notion login page
+    await AuthState.start.set()
+    await state.update_data(url=url)
+    await message.answer(f"Please login to Notion using this link: {url}")
+
+# Handle callback from Notion after user logs in
+@dp.message_handler(regexp=r"code=[a-zA-Z0-9]+")
+async def handle_notion_callback(message: types.Message, state: AuthState):
+    # Extract authorization code from URL
+    auth_code = message.text.split("=")[1]
+
+    # Exchange authorization code for access token
+    headers = {
+        "Content-Type": "application/json",
+        "Notion-Version": "2021-08-16",
+    }
+    data = {
+        "grant_type": "authorization_code",
+        "code": auth_code,
+        "redirect_uri": NOTION_REDIRECT_URI,
+        "client_id": NOTION_CLIENT_ID,
+        "client_secret": NOTION_CLIENT_SECRET,
+    }
+    response = notion.oauth.token(**data)
+
+    # Save access token and notify user
+    access_token = response["access_token"]
+    await message.answer("Login successful!")
+    await state.finish()
+
+# Start the bot
+if __name__ == "__main__":
+    from aiogram import executor
+
     executor.start_polling(dp, skip_updates=True)
