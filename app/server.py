@@ -29,7 +29,7 @@ async def handle(request: Request):
     if request.method != 'GET':
         return web.Response(status=405)
     code = request.query.get("code")
-    chat_id = request.query.get("state")
+    chat_id = request.query.get("state").split("-")[1]
     if code and chat_id:
         async with aiohttp.ClientSession() as session:
             # Exchange the authorization code for an access token
@@ -74,7 +74,7 @@ async def send_welcome(message: types.Message):
 
 async def send_login_url(message: types.Message):
     chat_id = message.chat.id
-    login_url = f'https://api.notion.com/v1/oauth/authorize?client_id={NOTION_CLIENT_ID}&redirect_uri={NOTION_REDIRECT_URI}&response_type=code&state={chat_id}'
+    login_url = f'https://api.notion.com/v1/oauth/authorize?client_id={NOTION_CLIENT_ID}&redirect_uri={NOTION_REDIRECT_URI}&response_type=code&state=instance-{chat_id}'
     await bot.send_message(message.chat.id, f'Click the link to login to Notion:\n\n{login_url}', parse_mode=ParseMode.HTML)
 
 async def handle_notion_callback(message: types.Message):
