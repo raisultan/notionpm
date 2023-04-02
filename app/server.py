@@ -30,6 +30,7 @@ async def handle(request: Request):
         return web.Response(status=405)
     code = request.query.get("code")
     chat_id = request.query.get("state").split("-")[1]
+    url = 'https://t.me/notionnBot'
     if code and chat_id:
         async with aiohttp.ClientSession() as session:
             # Exchange the authorization code for an access token
@@ -66,7 +67,7 @@ async def handle(request: Request):
 
             await bot.send_message(chat_id, 'Login successful!')
 
-        return web.Response(status=200)
+        return web.HTTPFound(url)
     return web.Response(status=400)
 
 async def send_welcome(message: types.Message):
