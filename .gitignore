@@ -1,0 +1,5 @@
+*.session
+.env
+chat_id.txt
+*.pyc
+.vscode
