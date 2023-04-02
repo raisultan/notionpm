@@ -29,7 +29,8 @@ async def handle(request: Request):
     if request.method != 'GET':
         return web.Response(status=405)
     code = request.query.get("code")
-    if code:
+    chat_id = request.query.get("state")
+    if code and chat_id:
         async with aiohttp.ClientSession() as session:
             # Exchange the authorization code for an access token
             json = {
@@ -63,7 +64,6 @@ async def handle(request: Request):
             blocks = notion.search()
             print(blocks)
 
-            chat_id = read_from_memory('chat_id')
             await bot.send_message(chat_id, 'Login successful!')
 
         return web.Response(status=200)
@@ -73,9 +73,8 @@ async def send_welcome(message: types.Message):
     await bot.send_message(message.chat.id, "Hi there! I'm a bot that can help you with Notion OAuth login. Just type /login to get started.")
 
 async def send_login_url(message: types.Message):
-    login_url = f'https://api.notion.com/v1/oauth/authorize?client_id={NOTION_CLIENT_ID}&redirect_uri={NOTION_REDIRECT_URI}&response_type=code'
     chat_id = message.chat.id
-    write_to_memory('chat_id', str(chat_id))
+    login_url = f'https://api.notion.com/v1/oauth/authorize?client_id={NOTION_CLIENT_ID}&redirect_uri={NOTION_REDIRECT_URI}&response_type=code&state={chat_id}'
     await bot.send_message(message.chat.id, f'Click the link to login to Notion:\n\n{login_url}', parse_mode=ParseMode.HTML)
 
 async def handle_notion_callback(message: types.Message):
@@ -88,35 +87,6 @@ async def handle_notion_callback(message: types.Message):
 dp.register_message_handler(send_welcome, commands=['start'])
 dp.register_message_handler(send_login_url, commands=['login'])
 dp.register_message_handler(handle_notion_callback, regexp=r"code=[a-zA-Z0-9]+")
-
-
-def read_from_memory(key: str) -> str:
-    """
-    Reads a string from local memory using the given key.
-
-    Args:
-        key: A string representing the key for the value to be read.
-
-    Returns:
-        A string representing the value associated with the given key. If the key is not found, an empty string is returned.
-    """
-    try:
-        with open(f"{key}.txt", "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        return ""
-
-def write_to_memory(key: str, value: str) -> None:
-    """
-    Writes a string to local memory using the given key.
-
-    Args:
-        key: A string representing the key for the value to be written.
-        value: A string representing the value to be written.
-    """
-    with open(f"{key}.txt", "w") as f:
-        f.write(value)
-
 
 if __name__ == '__main__':
     async def main():
