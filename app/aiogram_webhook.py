@@ -1,19 +1,16 @@
 import logging
+import os
+from urllib.parse import urlencode
 
-from aiogram import Bot, types
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher, FSMContext
+from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
-import os
-import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Command
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from notion_client import Client
-from urllib.parse import urlencode
 from dotenv import load_dotenv
+from notion_client import Client
 
 load_dotenv()
 
