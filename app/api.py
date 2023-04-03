@@ -1,11 +1,10 @@
 import os
-
-from typing import NamedTuple
 from dataclasses import dataclass
+from typing import NamedTuple
 
+from aiogram import Bot, Dispatcher, executor, types
 from dotenv import load_dotenv
 from notion_client import Client as NotionCLI
-from aiogram import Bot, Dispatcher, executor, types
 
 load_dotenv()
 
@@ -78,12 +77,13 @@ async def tg_list_databases(message: types.Message):
 
 # LOGIN
 
-import os
 import logging
-from aiohttp import web
+import os
+from urllib.parse import urlencode
+
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from urllib.parse import urlencode
+from aiohttp import web
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

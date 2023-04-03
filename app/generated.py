@@ -1,11 +1,11 @@
 from aiogram import Bot, Dispatcher, types
-from notion_client import Client
-from notion_client.errors import UnauthorizedError
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.webhook import StopPropagation
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils import executor, exceptions
+from aiogram.utils import exceptions, executor
+from notion_client import Client
+from notion_client.errors import UnauthorizedError
 
 NOTION_API_KEY = 'your-notion-api-key'
 

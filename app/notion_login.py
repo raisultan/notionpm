@@ -1,12 +1,13 @@
-import os
 import logging
+import os
+from urllib.parse import urlencode
+
 from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from notion_client import Client
-from urllib.parse import urlencode
 from dotenv import load_dotenv
+from notion_client import Client
 
 load_dotenv()
 
@@ -80,8 +81,8 @@ async def handle_webhook(request):
 
 # Start the bot and set up webhook
 if __name__ == "__main__":
-    from aiohttp import web
     from aiogram import executor
+    from aiohttp import web
 
     # Set up webhook
     app = web.Application()
