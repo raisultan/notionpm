@@ -63,7 +63,11 @@ async def handle_oauth(request: Request):
         blocks = notion.search()
         print(blocks)
 
-        await bot.send_message(chat_id, "Login successful!")
+        await bot.send_message(
+            chat_id,
+            "<b>Notion workspace connected successfully!🎊🤖</b>",
+            parse_mode=ParseMode.HTML
+        )
         return web.HTTPFound(BOT_URL)
     except Exception as e:
         print(e)
