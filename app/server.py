@@ -86,8 +86,11 @@ async def send_login_url(message: types.Message):
         f"&response_type=code"
         f"&state=instance-{message.chat.id}"
     )
-    reply = f"Click the link to login to Notion:\n\n{login_url}"
-    await bot.send_message(message.chat.id, reply, parse_mode=ParseMode.HTML)
+
+    button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
+    reply = f"In order to use Notion PM, you need to connect your Notion account"
+    await bot.send_message(message.chat.id, reply, reply_markup=markup, parse_mode=ParseMode.HTML)
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
