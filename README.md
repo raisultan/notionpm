@@ -4,3 +4,15 @@
 - [Notion API Raw Docs](https://developers.notion.com/reference)
 - [Notion Postman](https://www.postman.com/notionhq/workspace/notion-s-api-workspace/overview)
 - [Notion Python Client](https://github.com/ramnes/notion-sdk-py)
+
+## Useful Redis commands
+```shell
+# pull redis image
+docker pull redis
+
+# run redis
+docker run --name notionpm-redis -d -p 6379:6379 redis
+
+# access redis-cli
+docker exec -it notionpm-redis redis-cli
+````
