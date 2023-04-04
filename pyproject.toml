@@ -12,7 +12,7 @@ python-dotenv = "1.0.0"
 notion-client = "2.0.0"
 aiogram = "2.25.1"
 aiohttp = "3.8.4"
-aioredis = "2.0.1"
+redis = "4.5.4"
 
 
 [tool.poetry.group.dev.dependencies]
