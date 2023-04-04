@@ -88,7 +88,7 @@ async def handle_oauth(request: Request):
 
 
 async def send_welcome(message: types.Message):
-    access_token = str(get_user_access_token(message.chat.id))
+    access_token = str(await get_user_access_token(message.chat.id))
     if access_token:
         reply = (
             "Hi there!👋 Seems like you already connected your Notion workspace. "
@@ -103,7 +103,7 @@ async def send_welcome(message: types.Message):
 
 
 async def send_login_url(message: types.Message):
-    access_token = str(get_user_access_token(message.chat.id))
+    access_token = str(await get_user_access_token(message.chat.id))
     if access_token:
         reply = (
             "Seems like you already connected your Notion workspace. "
