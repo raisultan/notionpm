@@ -130,7 +130,7 @@ async def send_login_url(message: types.Message):
 
     button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
     markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
-    reply = f"In order to use Notion PM, you need to connect your Notion account"
+    reply = f"Connect your Notion workspace"
     await bot.send_message(
         message.chat.id,
         reply,
