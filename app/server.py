@@ -76,8 +76,8 @@ async def handle_oauth(request: Request):
 
 async def send_welcome(message: types.Message):
     reply = (
-        "Hi there! I'm a bot that can help you with Notion "
-        "OAuth login. Just type /login to get started."
+        "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
+        "To connect your Notion workspace type /login"
     )
     await bot.send_message(message.chat.id, reply)
 
