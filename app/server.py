@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import os
+from typing import Optional
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -9,12 +10,14 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from dotenv import load_dotenv
 from notion_client import Client
+from redis import asyncio as aioredis
 
 load_dotenv()
 
 bot = Bot(token=os.environ["BOT_TOKEN"])
 dp = Dispatcher(bot)
 notion = Client(auth=os.environ["NOTION_KEY"])
+redis = aioredis.from_url("redis://localhost")
 
 NOTION_CLIENT_ID = os.environ["NOTION_CLIENT_ID"]
 NOTION_CLIENT_SECRET = os.environ["NOTION_CLIENT_SECRET"]
@@ -44,6 +47,14 @@ async def make_oauth_request(code: str):
     return await response.json()
 
 
+async def save_user_access_token(chat_id: str, access_token: str) -> None:
+    await redis.set(chat_id, access_token)
+
+
+async def get_user_access_token(chat_id: str) -> Optional[str]:
+    return await redis.get(chat_id)
+
+
 async def handle_oauth(request: Request):
     code = request.query.get("code")
     state = request.query.get("state")
@@ -63,6 +74,8 @@ async def handle_oauth(request: Request):
         blocks = notion.search()
         print(blocks)
 
+        await save_user_access_token(chat_id, access_token)
+
         await bot.send_message(
             chat_id,
             "<b>Notion workspace connected successfully!🎊🤖</b>",
@@ -75,26 +88,46 @@ async def handle_oauth(request: Request):
 
 
 async def send_welcome(message: types.Message):
-    reply = (
-        "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
-        "To connect your Notion workspace type /login"
-    )
+    access_token = str(get_user_access_token(message.chat.id))
+    if access_token:
+        reply = (
+            "Hi there!👋 Seems like you already connected your Notion workspace. "
+            "Time to proceed with setup 🦆"
+        )
+    else:
+        reply = (
+            "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
+            "To connect your Notion workspace type /login"
+        )
     await bot.send_message(message.chat.id, reply)
 
 
 async def send_login_url(message: types.Message):
-    login_url = (
-        "https://api.notion.com/v1/oauth/authorize"
-        f"?client_id={NOTION_CLIENT_ID}"
-        f"&redirect_uri={NOTION_REDIRECT_URI}"
-        f"&response_type=code"
-        f"&state=instance-{message.chat.id}"
-    )
+    access_token = str(get_user_access_token(message.chat.id))
+    if access_token:
+        reply = (
+            "Seems like you already connected your Notion workspace. "
+            "Time to proceed with setup 🦆"
+        )
+        await bot.send_message(message.chat.id, reply)
+    else:
+        login_url = (
+            "https://api.notion.com/v1/oauth/authorize"
+            f"?client_id={NOTION_CLIENT_ID}"
+            f"&redirect_uri={NOTION_REDIRECT_URI}"
+            f"&response_type=code"
+            f"&state=instance-{message.chat.id}"
+        )
 
-    button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
-    markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
-    reply = f"In order to use Notion PM, you need to connect your Notion account"
-    await bot.send_message(message.chat.id, reply, reply_markup=markup, parse_mode=ParseMode.HTML)
+        button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
+        markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
+        reply = f"In order to use Notion PM, you need to connect your Notion account"
+        await bot.send_message(
+            message.chat.id,
+            reply,
+            reply_markup=markup,
+            parse_mode=ParseMode.HTML,
+        )
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
