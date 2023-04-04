@@ -97,20 +97,9 @@ async def send_welcome(message: types.Message):
     else:
         reply = (
             "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
-            "To connect your Notion workspace type /login"
+            "Let's get started by connecting your Notion workspace 🚀"
         )
-    await bot.send_message(message.chat.id, reply)
 
-
-async def send_login_url(message: types.Message):
-    access_token = await get_user_access_token(message.chat.id)
-    if access_token:
-        reply = (
-            "Seems like you already connected your Notion workspace. "
-            "Time to proceed with setup 🦆"
-        )
-        await bot.send_message(message.chat.id, reply)
-    else:
         login_url = (
             "https://api.notion.com/v1/oauth/authorize"
             f"?client_id={NOTION_CLIENT_ID}"
@@ -121,13 +110,33 @@ async def send_login_url(message: types.Message):
 
         button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
         markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
-        reply = f"In order to use Notion PM, you need to connect your Notion account"
         await bot.send_message(
             message.chat.id,
             reply,
             reply_markup=markup,
             parse_mode=ParseMode.HTML,
         )
+    await bot.send_message(message.chat.id, reply)
+
+
+async def send_login_url(message: types.Message):
+    login_url = (
+        "https://api.notion.com/v1/oauth/authorize"
+        f"?client_id={NOTION_CLIENT_ID}"
+        f"&redirect_uri={NOTION_REDIRECT_URI}"
+        f"&response_type=code"
+        f"&state=instance-{message.chat.id}"
+    )
+
+    button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
+    reply = f"In order to use Notion PM, you need to connect your Notion account"
+    await bot.send_message(
+        message.chat.id,
+        reply,
+        reply_markup=markup,
+        parse_mode=ParseMode.HTML,
+    )
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
