@@ -5,6 +5,8 @@ from typing import Any
 
 from notion_client import Client as NotionCLI
 
+import storage
+
 NOTION_TOKEN = "secret_x2zo6k7taCVb7DFAQT4UauuHYh3DbMZdBjXETsivjUb"
 notion = NotionCLI(NOTION_TOKEN)
 NOTION_DB = os.environ["NOTION_DB_ID"]
@@ -107,5 +109,41 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
 def get_page_name(page: dict) -> str:
     return page['properties']['Name']['title'][0]['plain_text']
 
+
 def get_page_url(page: dict) -> str:
     return page['url']
+
+
+from rocketry import Rocketry
+from rocketry.conds import daily
+
+app = Rocketry()
+
+@app.task(daily)
+async def track_changes_for_all():
+    for chat_id_key in await storage.redis.get('chat_*'):
+        chat_id = chat_id_key.decode('utf-8').split('_')[1]
+        access_token = await storage.get_user_access_token(chat_id)
+        if not access_token:
+            print(f'No access token for {chat_id}! Skipping...')
+            continue
+
+        try:
+            notion = NotionCLI(access_token)
+            db_id = await storage.get_user_db_id(chat_id)
+            old_db_state = await storage.get_user_db_state(db_id)
+            new_db_state = notion.databases.query(database_id=db_id)['results']
+            track_props = await storage.get_user_tracked_properties(db_id)
+            changes = track_db_changes(old_db_state, new_db_state, track_props)
+        except Exception as e:
+            print(f'Exception for {chat_id}: {e}')
+            continue
+        if not changes:
+            print(f'No changes for {chat_id} - {db_id}!')
+            continue
+
+        print(f'Changes for {chat_id}: {changes}')
+
+
+if __name__ == "__main__":
+    app.run()
