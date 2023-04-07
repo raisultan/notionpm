@@ -94,6 +94,7 @@ async def send_welcome(message: types.Message):
             "Hi there!👋 Seems like you already connected your Notion workspace. "
             "Time to proceed with setup 🦆"
         )
+        await bot.send_message(message.chat.id, reply)
     else:
         reply = (
             "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
@@ -116,7 +117,6 @@ async def send_welcome(message: types.Message):
             reply_markup=markup,
             parse_mode=ParseMode.HTML,
         )
-    await bot.send_message(message.chat.id, reply)
 
 
 async def send_login_url(message: types.Message):
