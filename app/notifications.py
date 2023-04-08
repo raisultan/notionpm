@@ -9,10 +9,6 @@ from rocketry.conds import every
 
 import app.storage as storage
 
-NOTION_TOKEN = "secret_x2zo6k7taCVb7DFAQT4UauuHYh3DbMZdBjXETsivjUb"
-notion = NotionCLI(NOTION_TOKEN)
-NOTION_DB = os.environ["NOTION_DB_ID"]
-
 
 @dataclass
 class PropertyChange:
@@ -117,27 +113,29 @@ def get_page_url(page: dict) -> str:
 
 app = Rocketry()
 
-@app.task(every('5 seconds'))
+@app.task(every('7 seconds'))
 async def track_changes_for_all():
+    print('Tracking changes for all users...')
     chat_id_keys = await storage.get_all_chat_ids()
     if not chat_id_keys:
         print('No chat ids found!')
         return
 
     for chat_id_key in chat_id_keys:
-        chat_id = chat_id_key.decode('utf-8').split('_')[1]
+        chat_id = chat_id_key.split('_')[1]
         access_token = await storage.get_user_access_token(chat_id)
         if not access_token:
             print(f'No access token for {chat_id}! Skipping...')
             continue
 
         try:
-            db_id = await storage.get_user_db_id(chat_id)
-            notion = NotionCLI(access_token)
+            db_id = await storage.get_user_db_id(chat_id) 
+            notion = NotionCLI(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
-            new_db_state = notion.databases.query(database_id=db_id)['results']
-            track_props = await storage.get_user_tracked_properties(db_id)
-            changes = track_db_changes(old_db_state, new_db_state, track_props)
+            new_db_state = notion.databases.query(database_id=db_id)
+            track_props = await storage.get_user_tracked_properties(chat_id)
+            changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
+            await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
             print(f'Exception for {chat_id}: {e}')
             continue
@@ -146,6 +144,7 @@ async def track_changes_for_all():
             continue
 
         print(f'Changes for {chat_id}: {changes}')
+    print('Done!')
 
 
 if __name__ == "__main__":
