@@ -10,7 +10,7 @@ from aiohttp.web_request import Request
 from dotenv import load_dotenv
 from notion_client import Client
 
-import storage
+import app.storage as storage
 
 load_dotenv()
 
