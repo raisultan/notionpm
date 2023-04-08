@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from notion_client import Client as NotionCLI
+from rocketry import Rocketry
+from rocketry.conds import every
 
-import storage
+import app.storage as storage
 
 NOTION_TOKEN = "secret_x2zo6k7taCVb7DFAQT4UauuHYh3DbMZdBjXETsivjUb"
 notion = NotionCLI(NOTION_TOKEN)
@@ -113,15 +115,16 @@ def get_page_name(page: dict) -> str:
 def get_page_url(page: dict) -> str:
     return page['url']
 
-
-from rocketry import Rocketry
-from rocketry.conds import daily
-
 app = Rocketry()
 
-@app.task(daily)
+@app.task(every('5 seconds'))
 async def track_changes_for_all():
-    for chat_id_key in await storage.redis.get('chat_*'):
+    chat_id_keys = await storage.get_all_chat_ids()
+    if not chat_id_keys:
+        print('No chat ids found!')
+        return
+
+    for chat_id_key in chat_id_keys:
         chat_id = chat_id_key.decode('utf-8').split('_')[1]
         access_token = await storage.get_user_access_token(chat_id)
         if not access_token:
@@ -129,8 +132,8 @@ async def track_changes_for_all():
             continue
 
         try:
-            notion = NotionCLI(access_token)
             db_id = await storage.get_user_db_id(chat_id)
+            notion = NotionCLI(access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)['results']
             track_props = await storage.get_user_tracked_properties(db_id)
