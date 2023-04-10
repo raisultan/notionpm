@@ -3,11 +3,17 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
+from aiogram import Bot
+from dotenv import load_dotenv
 from notion_client import Client as NotionCLI
 from rocketry import Rocketry
 from rocketry.conds import every
 
 import app.storage as storage
+
+load_dotenv()
+
+bot = Bot(token=os.environ["BOT_TOKEN"])
 
 
 @dataclass
@@ -111,6 +117,22 @@ def get_page_name(page: dict) -> str:
 def get_page_url(page: dict) -> str:
     return page['url']
 
+
+def compose_properties_changed_message(page_change: PageChange) -> str:
+    messages = []
+    for field_change in page_change.field_changes:
+        field_message = f"{field_change.name}: {field_change.old_value} -> {field_change.new_value}"
+        messages.append(field_message)
+    message = f"{page_change.name} ({page_change.url}):\n{', '.join(messages)}"
+    return message
+
+
+def compose_pages_changed_message(page_changes: list[PageChange]) -> str:
+    messages = [compose_properties_changed_message(page_change) for page_change in page_changes]
+    message = "\n\n".join(messages)
+    return message
+
+
 app = Rocketry()
 
 @app.task(every('7 seconds'))
@@ -142,6 +164,9 @@ async def track_changes_for_all():
         if not changes:
             print(f'No changes for {chat_id} - {db_id}!')
             continue
+
+        changes_message = compose_pages_changed_message(changes)
+        await bot.send_message(chat_id, changes_message)
 
         print(f'Changes for {chat_id}: {changes}')
     print('Done!')
