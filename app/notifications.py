@@ -1,9 +1,12 @@
+import logging
 import os
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
+from html import escape
 
 from aiogram import Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from dotenv import load_dotenv
 from notion_client import Client as NotionCLI
 from rocketry import Rocketry
@@ -12,6 +15,13 @@ from rocketry.conds import every
 import app.storage as storage
 
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 bot = Bot(token=os.environ["BOT_TOKEN"])
 
@@ -93,10 +103,10 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
         new = new['status']['name']
         return old, new
     elif old['type'] == 'date':
-        old_start = old['date']['start']
-        new_start = new['date']['start']
-        old_end = old['date']['end']
-        new_end = new['date']['end']
+        old_start = old['date']['start'] if old['date'] else None
+        new_start = new['date']['start'] if new['date'] else None
+        old_end = old['date']['end'] if old['date'] else None
+        new_end = new['date']['end'] if new['date'] else None
         return f'{old_start} -> {old_end}', f'{new_start} -> {new_end}'
     elif old['type'] == 'people':
         old = [person['name'] for person in old['people']]
@@ -118,36 +128,43 @@ def get_page_url(page: dict) -> str:
     return page['url']
 
 
-def compose_properties_changed_message(page_change: PageChange) -> str:
+def escape_html(any: Any) -> str:
+    return escape(str(any))
+
+
+def create_properties_changed_message_with_button(page_change: PageChange) -> tuple:
     messages = []
     for field_change in page_change.field_changes:
-        field_message = f"{field_change.name}: {field_change.old_value} -> {field_change.new_value}"
+        field_message = (
+            f"<b>{escape_html(field_change.name)}</b>: "
+            f"{escape_html(str(field_change.old_value))} → "
+            f"{escape_html(str(field_change.new_value))}\n\n"
+        )
         messages.append(field_message)
-    message = f"{page_change.name} ({page_change.url}):\n{', '.join(messages)}"
-    return message
+    message = f"📄 Changes in {escape_html(page_change.name)}:\n\n{''.join(messages)}"
 
+    markup = InlineKeyboardMarkup()
+    task_button = InlineKeyboardButton(text="View page 🔗", url=page_change.url)
+    markup.add(task_button)
 
-def compose_pages_changed_message(page_changes: list[PageChange]) -> str:
-    messages = [compose_properties_changed_message(page_change) for page_change in page_changes]
-    message = "\n\n".join(messages)
-    return message
+    return message, markup
 
 
 app = Rocketry()
 
-@app.task(every('7 seconds'))
+@app.task(every('10 seconds'))
 async def track_changes_for_all():
-    print('Tracking changes for all users...')
+    logger.info('Tracking changes for all users...')
     chat_id_keys = await storage.get_all_chat_ids()
     if not chat_id_keys:
-        print('No chat ids found!')
+        logger.warning('No chat ids found!')
         return
 
     for chat_id_key in chat_id_keys:
         chat_id = chat_id_key.split('_')[1]
         access_token = await storage.get_user_access_token(chat_id)
         if not access_token:
-            print(f'No access token for {chat_id}! Skipping...')
+            logger.warning(f'No access token for {chat_id}! Skipping...')
             continue
 
         try:
@@ -159,17 +176,25 @@ async def track_changes_for_all():
             changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
             await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
-            print(f'Exception for {chat_id}: {e}')
+            logger.exception(f'Exception for {chat_id}: {repr(e)}')
             continue
         if not changes:
-            print(f'No changes for {chat_id} - {db_id}!')
+            logger.info(f'No changes for {chat_id} - {db_id}!')
             continue
 
-        changes_message = compose_pages_changed_message(changes)
-        await bot.send_message(chat_id, changes_message)
+        for page_change in changes:
+            change_message, button_markup = create_properties_changed_message_with_button(
+                page_change,
+            )
+            await bot.send_message(
+                chat_id,
+                change_message,
+                reply_markup=button_markup,
+                parse_mode=ParseMode.HTML,
+            )
 
-        print(f'Changes for {chat_id}: {changes}')
-    print('Done!')
+        logger.info(f'Changes for {chat_id}: {changes}')
+    logger.info('Done!')
 
 
 if __name__ == "__main__":
