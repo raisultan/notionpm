@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import os
-from typing import Optional
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -10,14 +9,13 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from dotenv import load_dotenv
 from notion_client import Client
-from redis import asyncio as aioredis
+
+import app.storage as storage
 
 load_dotenv()
 
 bot = Bot(token=os.environ["BOT_TOKEN"])
 dp = Dispatcher(bot)
-notion = Client(auth=os.environ["NOTION_KEY"])
-redis = aioredis.from_url("redis://localhost")
 
 NOTION_CLIENT_ID = os.environ["NOTION_CLIENT_ID"]
 NOTION_CLIENT_SECRET = os.environ["NOTION_CLIENT_SECRET"]
@@ -47,14 +45,6 @@ async def make_oauth_request(code: str):
     return await response.json()
 
 
-async def save_user_access_token(chat_id: str, access_token: str) -> None:
-    await redis.set(chat_id, access_token)
-
-
-async def get_user_access_token(chat_id: str) -> Optional[str]:
-    return await redis.get(chat_id)
-
-
 async def handle_oauth(request: Request):
     code = request.query.get("code")
     state = request.query.get("state")
@@ -74,7 +64,7 @@ async def handle_oauth(request: Request):
         blocks = notion.search()
         print(blocks)
 
-        await save_user_access_token(chat_id, access_token)
+        await storage.save_user_access_token(chat_id, access_token)
 
         await bot.send_message(
             chat_id,
@@ -88,7 +78,7 @@ async def handle_oauth(request: Request):
 
 
 async def send_welcome(message: types.Message):
-    access_token = await get_user_access_token(message.chat.id)
+    access_token = await storage.get_user_access_token(message.chat.id)
     if access_token:
         reply = (
             "Hi there!👋 Seems like you already connected your Notion workspace. "
