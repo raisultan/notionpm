@@ -4,13 +4,15 @@ import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ParseMode
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from aiogram.utils.callback_data import CallbackData
 from aiohttp import web
 from aiohttp.web_request import Request
 from dotenv import load_dotenv
-from notion_client import Client
+from notion_client import Client as NotionCLI
 
 import app.storage as storage
+from app.notion import list_databases
 
 load_dotenv()
 
@@ -60,7 +62,7 @@ async def handle_oauth(request: Request):
         response = await make_oauth_request(code)
 
         access_token = response.get("access_token")
-        notion = Client(auth=access_token)
+        notion = NotionCLI(auth=access_token)
         blocks = notion.search()
         print(blocks)
 
@@ -129,8 +131,53 @@ async def send_login_url(message: types.Message):
     )
 
 
+choose_db_callback_data = CallbackData("choose_db", "db_id")
+async def choose_database_handler(message: types.Message):
+    access_token = await storage.get_user_access_token(message.chat.id)
+    
+    if not access_token:
+        await bot.send_message(message.chat.id, "You need to connect your Notion workspace first. Use the /login command to connect.")
+        return
+
+    user_notion = NotionCLI(auth=access_token)
+    databases = list_databases(user_notion)
+
+    if not databases:
+        await bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
+        return
+
+    inline_keyboard = []
+
+    for db in databases:
+        button = InlineKeyboardButton(db.title, callback_data=choose_db_callback_data.new(db_id=db.id))
+        inline_keyboard.append([button])
+
+    markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+    current_db_id = await storage.get_user_db_id(message.chat.id)
+    if current_db_id:
+        await bot.send_message(
+            message.chat.id,
+            "You have already chosen a default database. You can choose a new one from the list below:",
+            reply_markup=markup
+        )
+    else:
+        await bot.send_message(message.chat.id, "Choose the default database for team tasks:", reply_markup=markup)
+
+
+async def choose_db_callback_handler(callback_query: CallbackQuery, callback_data: dict):
+    db_id = callback_data.get("db_id")
+    chat_id = callback_query.message.chat.id
+
+    await storage.set_user_db_id(chat_id, db_id)
+    await bot.send_message(chat_id, f"Default database has been set to {callback_data.get('db_title')} 🎉")
+
+
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
+dp.register_message_handler(choose_database_handler, commands=["choose_database"])
+dp.register_callback_query_handler(
+    choose_db_callback_handler, choose_db_callback_data.filter()
+)
 
 
 async def main():
