@@ -175,6 +175,57 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
     await bot.send_message(chat_id, f"Default database has been set to {callback_data.get('db_title')} 🎉")
 
 
+choose_property_callback_data = CallbackData("choose_property", "prop_name")
+async def choose_properties_handler(message: types.Message):
+    chat_id = message.chat.id
+    access_token = await storage.get_user_access_token(chat_id)
+
+    if not access_token:
+        await message.reply("You need to connect your Notion workspace first. Use the /login command to connect.")
+        return
+
+    user_notion = NotionCLI(auth=access_token)
+    db_id = await storage.get_user_db_id(chat_id)
+
+    if not db_id:
+        await message.reply("You must choose a default database first. Use the /choose_database command.")
+        return
+
+    database = user_notion.databases.retrieve(db_id)
+    properties = database['properties']
+    property_buttons = []
+
+    for prop_name, prop in properties.items():
+        button = InlineKeyboardButton(prop_name, callback_data=choose_property_callback_data.new(prop_name=prop_name))
+        property_buttons.append([button])
+
+    markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
+    await message.reply("Choose the properties you want to track:", reply_markup=markup)
+
+dp.register_message_handler(choose_properties_handler, commands=["choose_properties"])
+
+async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
+    chat_id = callback_query.message.chat.id
+    prop_name = callback_data.get("prop_name")
+    tracked_properties = await storage.get_user_tracked_properties(chat_id)
+
+    if not tracked_properties:
+        tracked_properties = []
+
+    if prop_name in tracked_properties:
+        tracked_properties.remove(prop_name)
+        action = "removed"
+    else:
+        tracked_properties.append(prop_name)
+        action = "added"
+
+    await storage.set_user_tracked_properties(chat_id, tracked_properties)
+    await bot.send_message(chat_id, f"Property {prop_name} has been {action} from the tracked properties list.")
+
+dp.register_callback_query_handler(
+    choose_property_callback_handler, choose_property_callback_data.filter()
+)
+
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
 dp.register_message_handler(choose_database_handler, commands=["choose_database"])
