@@ -136,7 +136,10 @@ async def choose_database_handler(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
 
     if not access_token:
-        await bot.send_message(message.chat.id, "You need to connect your Notion workspace first. Use the /login command to connect.")
+        await bot.send_message(
+            message.chat.id,
+            "You need to connect your Notion workspace first. Use the /login command to connect.",
+        )
         return
 
     user_notion = NotionCLI(auth=access_token)
@@ -158,13 +161,17 @@ async def choose_database_handler(message: types.Message):
     markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
     current_db_id = await storage.get_user_db_id(message.chat.id)
     if current_db_id:
+        text = (
+            "You have already chosen a default database. "
+            "You can choose a new one from the list below:"
+        )
+        await bot.send_message(message.chat.id, text, reply_markup=markup)
+    else:
         await bot.send_message(
             message.chat.id,
-            "You have already chosen a default database. You can choose a new one from the list below:",
-            reply_markup=markup
+            "Choose the default database for team tasks:",
+            reply_markup=markup,
         )
-    else:
-        await bot.send_message(message.chat.id, "Choose the default database for team tasks:", reply_markup=markup)
 
 
 async def choose_db_callback_handler(callback_query: CallbackQuery, callback_data: dict):
@@ -172,7 +179,10 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
     chat_id = callback_query.message.chat.id
 
     await storage.set_user_db_id(chat_id, db_id)
-    await bot.send_message(chat_id, f"Default database has been set to {callback_data.get('db_title')} 🎉")
+    await bot.send_message(
+        chat_id,
+        f"Default database has been set to {callback_data.get('db_title')} 🎉",
+    )
 
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
@@ -181,22 +191,31 @@ async def choose_properties_handler(message: types.Message):
     access_token = await storage.get_user_access_token(chat_id)
 
     if not access_token:
-        await bot.send_message(chat_id, "You need to connect your Notion workspace first. Use the /login command to connect.")
+        await bot.send_message(
+            chat_id,
+            "You need to connect your Notion workspace first. Use the /login command to connect.",
+        )
         return
 
     user_notion = NotionCLI(auth=access_token)
     db_id = await storage.get_user_db_id(chat_id)
 
     if not db_id:
-        await bot.send_message(chat_id, "You must choose a default database first. Use the /choose_database command.")
+        await bot.send_message(
+            chat_id,
+            "You must choose a default database first. Use the /choose_database command.",
+        )
         return
 
     database = user_notion.databases.retrieve(db_id)
     properties = database['properties']
     property_buttons = []
 
-    for prop_name, prop in properties.items():
-        button = InlineKeyboardButton(prop_name, callback_data=choose_property_callback_data.new(prop_name=prop_name))
+    for prop_name, _ in properties.items():
+        button = InlineKeyboardButton(
+            prop_name,
+            callback_data=choose_property_callback_data.new(prop_name=prop_name),
+        )
         property_buttons.append([button])
 
     markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
@@ -219,7 +238,10 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
         action = "added"
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
-    await bot.send_message(chat_id, f"Property {prop_name} has been {action} from the tracked properties list.")
+    await bot.send_message(
+        chat_id,
+        f"Property {prop_name} has been {action} from the tracked properties list.",
+    )
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
