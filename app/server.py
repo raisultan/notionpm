@@ -181,14 +181,14 @@ async def choose_properties_handler(message: types.Message):
     access_token = await storage.get_user_access_token(chat_id)
 
     if not access_token:
-        await message.reply("You need to connect your Notion workspace first. Use the /login command to connect.")
+        await bot.send_message(chat_id, "You need to connect your Notion workspace first. Use the /login command to connect.")
         return
 
     user_notion = NotionCLI(auth=access_token)
     db_id = await storage.get_user_db_id(chat_id)
 
     if not db_id:
-        await message.reply("You must choose a default database first. Use the /choose_database command.")
+        await bot.send_message(chat_id, "You must choose a default database first. Use the /choose_database command.")
         return
 
     database = user_notion.databases.retrieve(db_id)
@@ -200,9 +200,8 @@ async def choose_properties_handler(message: types.Message):
         property_buttons.append([button])
 
     markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
-    await message.reply("Choose the properties you want to track:", reply_markup=markup)
+    await bot.send_message(chat_id, "Choose the properties you want to track:", reply_markup=markup)
 
-dp.register_message_handler(choose_properties_handler, commands=["choose_properties"])
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
@@ -222,15 +221,16 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
     await bot.send_message(chat_id, f"Property {prop_name} has been {action} from the tracked properties list.")
 
-dp.register_callback_query_handler(
-    choose_property_callback_handler, choose_property_callback_data.filter()
-)
 
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
 dp.register_message_handler(choose_database_handler, commands=["choose_database"])
 dp.register_callback_query_handler(
     choose_db_callback_handler, choose_db_callback_data.filter()
+)
+dp.register_message_handler(choose_properties_handler, commands=["choose_properties"])
+dp.register_callback_query_handler(
+    choose_property_callback_handler, choose_property_callback_data.filter()
 )
 
 
