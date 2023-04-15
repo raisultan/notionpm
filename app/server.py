@@ -73,42 +73,40 @@ async def handle_oauth(request: Request):
             "<b>Notion workspace connected successfully!🎊🤖</b>",
             parse_mode=ParseMode.HTML
         )
+
+        await check_and_continue_setup(await bot.get_chat(chat_id))
+
         return web.HTTPFound(BOT_URL)
     except Exception as e:
         print(e)
         return web.Response(status=400)
 
 
-async def send_welcome(message: types.Message):
+async def check_and_continue_setup(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
-    if access_token:
-        reply = (
-            "Hi there!👋 Seems like you already connected your Notion workspace. "
-            "Time to proceed with setup 🦆"
-        )
-        await bot.send_message(message.chat.id, reply)
-    else:
-        reply = (
-            "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
-            "Let's get started by connecting your Notion workspace 🚀"
-        )
+    if not access_token:
+        await send_login_url(message)
+        return
 
-        login_url = (
-            "https://api.notion.com/v1/oauth/authorize"
-            f"?client_id={NOTION_CLIENT_ID}"
-            f"&redirect_uri={NOTION_REDIRECT_URI}"
-            f"&response_type=code"
-            f"&state=instance-{message.chat.id}"
-        )
+    db_id = await storage.get_user_db_id(message.chat.id)
+    if not db_id:
+        await choose_database_handler(message)
+        return
 
-        button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
-        markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
-        await bot.send_message(
-            message.chat.id,
-            reply,
-            reply_markup=markup,
-            parse_mode=ParseMode.HTML,
-        )
+    tracked_properties = await storage.get_user_tracked_properties(message.chat.id)
+    if not tracked_properties:
+        await choose_properties_handler(message)
+        return
+
+    reply = (
+        "Congratulations!🎉 You have completed the setup. "
+        "Now you can manage your tasks in Notion. 🦆"
+    )
+    await bot.send_message(message.chat.id, reply)
+
+
+async def send_welcome(message: types.Message):
+    await check_and_continue_setup(message)
 
 
 async def send_login_url(message: types.Message):
@@ -183,6 +181,7 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
         chat_id,
         f"Default database has been set to {callback_data.get('db_title')} 🎉",
     )
+    await check_and_continue_setup(callback_query.message)
 
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
@@ -242,6 +241,7 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
         chat_id,
         f"Property {prop_name} has been {action} from the tracked properties list.",
     )
+    await check_and_continue_setup(callback_query.message)
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
