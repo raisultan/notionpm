@@ -32,10 +32,14 @@ def list_databases(notion: NotionCLI) -> list[Database]:
     for block in blocks['results']:
         # see search_example.py
         if block['object'] == 'database':
+            try:
+                title = block['title'][0]['plain_text']
+            except KeyError:
+                title = ""
             databases.append(
                 Database(
                     id=block['id'],
-                    title=block['title'][0]['plain_text'],
+                    title=title,
                 ),
             )
 
