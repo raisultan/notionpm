@@ -131,10 +131,10 @@ async def send_login_url(message: types.Message):
     )
 
 
-choose_db_callback_data = CallbackData("choose_db", "db_id")
+choose_db_callback_data = CallbackData("choose_db", "db_id", "db_title")
 async def choose_database_handler(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
-    
+
     if not access_token:
         await bot.send_message(message.chat.id, "You need to connect your Notion workspace first. Use the /login command to connect.")
         return
@@ -149,7 +149,10 @@ async def choose_database_handler(message: types.Message):
     inline_keyboard = []
 
     for db in databases:
-        button = InlineKeyboardButton(db.title, callback_data=choose_db_callback_data.new(db_id=db.id))
+        button = InlineKeyboardButton(
+            db.title,
+            callback_data=choose_db_callback_data.new(db_id=db.id,db_title=db.title),
+        )
         inline_keyboard.append([button])
 
     markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
