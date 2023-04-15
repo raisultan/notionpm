@@ -211,8 +211,37 @@ async def choose_properties_handler(message: types.Message):
         )
         property_buttons.append([button])
 
+    done_button = InlineKeyboardButton(
+        "Done selecting ✅", callback_data="properties_done"
+    )
+    property_buttons.append([done_button])
+
     markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
-    await bot.send_message(chat_id, "Choose the properties you want to track:", reply_markup=markup)
+    sent_message = await bot.send_message(
+        chat_id,
+        "Choose the properties you want to track and press 'Done selecting ✅' when finished:",
+        reply_markup=markup,
+    )
+
+    await storage.set_sent_message_id(chat_id, sent_message.message_id)
+
+
+async def properties_done_callback_handler(callback_query: CallbackQuery):
+    chat_id = callback_query.message.chat.id
+    message_id = callback_query.message.message_id
+    sent_message_id = await storage.get_sent_message_id(chat_id)
+
+    if sent_message_id == message_id:
+        await bot.delete_message(chat_id, message_id)
+        await bot.send_message(
+            chat_id,
+            "Property selection is complete. You can continue with other setup steps or use the bot's features.",
+        )
+    else:
+        await bot.answer_callback_query(
+            callback_query.id,
+            "The property selection message has already been removed. Please use the bot's features or other setup steps.",
+        )
 
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
@@ -225,15 +254,15 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
 
     if prop_name in tracked_properties:
         tracked_properties.remove(prop_name)
-        action = "removed"
+        action = "removed from"
     else:
         tracked_properties.append(prop_name)
-        action = "added"
+        action = "added to"
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
     await bot.send_message(
         chat_id,
-        f"Property {prop_name} has been {action} from the tracked properties list.",
+        f"Property {prop_name} has been {action} the tracked properties.",
     )
     await check_and_continue_setup(callback_query.message)
 
@@ -248,6 +277,7 @@ dp.register_message_handler(choose_properties_handler, commands=["choose_propert
 dp.register_callback_query_handler(
     choose_property_callback_handler, choose_property_callback_data.filter()
 )
+dp.register_callback_query_handler(properties_done_callback_handler, text="properties_done")
 
 
 async def main():
