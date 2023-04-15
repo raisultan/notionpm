@@ -68,14 +68,8 @@ async def handle_oauth(request: Request):
 
         await storage.save_user_access_token(chat_id, access_token)
 
-        await bot.send_message(
-            chat_id,
-            "<b>Notion workspace connected successfully!🎊🤖</b>",
-            parse_mode=ParseMode.HTML
-        )
-
-        await check_and_continue_setup(await bot.get_chat(chat_id))
-
+        message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
+        await check_and_continue_setup(message)
         return web.HTTPFound(BOT_URL)
     except Exception as e:
         print(e)
