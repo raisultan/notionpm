@@ -245,7 +245,7 @@ async def properties_done_handler(message: types.Message):
 
     if sent_message_id:
         await bot.delete_message(chat_id, sent_message_id)
-        await storage.set_sent_message_id(chat_id, None)
+        await storage.set_sent_message_id(chat_id, "")
 
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
     if not tracked_properties:
