@@ -287,7 +287,7 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
         )
         await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
     else:
-        current_message = await bot.get_chat(chat_id).fetch_message(message_id)
+        current_message = await (await bot.get_chat(chat_id)).fetch_message(message_id)
         if current_message.text != new_text:
             await bot.edit_message_text(
                 chat_id=chat_id,
