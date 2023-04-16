@@ -4,7 +4,15 @@ import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from aiogram.utils import exceptions
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ParseMode,
+    ReplyKeyboardMarkup,
+)
 from aiogram.utils.callback_data import CallbackData
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -68,47 +76,38 @@ async def handle_oauth(request: Request):
 
         await storage.save_user_access_token(chat_id, access_token)
 
-        await bot.send_message(
-            chat_id,
-            "<b>Notion workspace connected successfully!🎊🤖</b>",
-            parse_mode=ParseMode.HTML
-        )
+        message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
+        await check_and_continue_setup(message)
         return web.HTTPFound(BOT_URL)
     except Exception as e:
         print(e)
         return web.Response(status=400)
 
 
-async def send_welcome(message: types.Message):
+async def check_and_continue_setup(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
-    if access_token:
-        reply = (
-            "Hi there!👋 Seems like you already connected your Notion workspace. "
-            "Time to proceed with setup 🦆"
-        )
-        await bot.send_message(message.chat.id, reply)
-    else:
-        reply = (
-            "Hi there!👋 I'm a bot that can help you with project managememnt in Notion. "
-            "Let's get started by connecting your Notion workspace 🚀"
-        )
+    if not access_token:
+        await send_login_url(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
 
-        login_url = (
-            "https://api.notion.com/v1/oauth/authorize"
-            f"?client_id={NOTION_CLIENT_ID}"
-            f"&redirect_uri={NOTION_REDIRECT_URI}"
-            f"&response_type=code"
-            f"&state=instance-{message.chat.id}"
-        )
+    db_id = await storage.get_user_db_id(message.chat.id)
+    if not db_id:
+        await choose_database_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
 
-        button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
-        markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
-        await bot.send_message(
-            message.chat.id,
-            reply,
-            reply_markup=markup,
-            parse_mode=ParseMode.HTML,
-        )
+    tracked_properties = await storage.get_user_tracked_properties(message.chat.id)
+    if not tracked_properties:
+        await choose_properties_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
+
+    await storage.set_user_setup_status(message.chat.id, False)
+
+
+async def send_welcome(message: types.Message):
+    await check_and_continue_setup(message)
 
 
 async def send_login_url(message: types.Message):
@@ -183,6 +182,7 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
         chat_id,
         f"Default database has been set to {callback_data.get('db_title')} 🎉",
     )
+    await check_and_continue_setup(callback_query.message)
 
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
@@ -219,7 +219,51 @@ async def choose_properties_handler(message: types.Message):
         property_buttons.append([button])
 
     markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
-    await bot.send_message(chat_id, "Choose the properties you want to track:", reply_markup=markup)
+
+    done_button = KeyboardButton("Done selecting✅")
+    done_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    done_markup.add(done_button)
+
+    sent_message = await bot.send_message(
+        chat_id,
+        "Choose the properties you want to track:",
+        reply_markup=markup,
+    )
+
+    await storage.set_sent_message_id(chat_id, sent_message.message_id)
+
+    await bot.send_message(
+        chat_id,
+        "Press 'Done selecting✅' when you're finished selecting properties🤖",
+        reply_markup=done_markup,
+    )
+
+
+async def properties_done_handler(message: types.Message):
+    chat_id = message.chat.id
+    sent_message_id = await storage.get_sent_message_id(chat_id)
+
+    if sent_message_id:
+        await bot.delete_message(chat_id, sent_message_id)
+        await storage.set_sent_message_id(chat_id, "")
+
+    tracked_properties = await storage.get_user_tracked_properties(chat_id)
+    if not tracked_properties:
+        await bot.send_message(chat_id, "No properties have been selected.")
+    else:
+        await bot.send_message(
+            chat_id,
+            f"Selected properties: {', '.join(tracked_properties)}",
+            reply_markup=types.ReplyKeyboardRemove(),
+        )
+        is_in_setup = await storage.get_user_setup_status(chat_id)
+        if is_in_setup:
+            await bot.send_message(
+                chat_id,
+                "Congratulations! 🎉 Your setup process is complete. "
+                "You can now start tracking changes in your Notion workspace.",
+            )
+            await storage.set_user_setup_status(chat_id, False)
 
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
@@ -230,18 +274,32 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
     if not tracked_properties:
         tracked_properties = []
 
-    if prop_name in tracked_properties:
-        tracked_properties.remove(prop_name)
-        action = "removed"
-    else:
+    if prop_name not in tracked_properties:
         tracked_properties.append(prop_name)
-        action = "added"
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
-    await bot.send_message(
-        chat_id,
-        f"Property {prop_name} has been {action} from the tracked properties list.",
-    )
+
+    if tracked_properties:
+        new_text = f"Current tracked properties: {', '.join(tracked_properties)}"
+    else:
+        new_text = "No properties have been selected."
+
+    message_id = await storage.get_tracked_properties_message_id(chat_id)
+    if not message_id:
+        sent_message = await bot.send_message(
+            chat_id,
+            text=new_text,
+        )
+        await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
+    else:
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=new_text,
+            )
+        except exceptions.MessageNotModified:
+            pass
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
@@ -254,6 +312,7 @@ dp.register_message_handler(choose_properties_handler, commands=["choose_propert
 dp.register_callback_query_handler(
     choose_property_callback_handler, choose_property_callback_data.filter()
 )
+dp.register_message_handler(properties_done_handler, lambda message: message.text == 'Done selecting✅')
 
 
 async def main():
