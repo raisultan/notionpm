@@ -87,19 +87,22 @@ async def check_and_continue_setup(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
         await send_login_url(message)
+        await storage.set_user_setup_status(message.chat.id, True)
         return
 
     db_id = await storage.get_user_db_id(message.chat.id)
     if not db_id:
         await choose_database_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
         return
 
     tracked_properties = await storage.get_user_tracked_properties(message.chat.id)
     if not tracked_properties:
         await choose_properties_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
         return
 
-    return
+    await storage.set_user_setup_status(message.chat.id, False)
 
 
 async def send_welcome(message: types.Message):
@@ -252,39 +255,38 @@ async def properties_done_handler(message: types.Message):
             f"Selected properties: {', '.join(tracked_properties)}",
             reply_markup=types.ReplyKeyboardRemove(),
         )
+        is_in_setup = await storage.get_user_setup_status(chat_id)
+        if is_in_setup:
+            await bot.send_message(
+                chat_id,
+                "Congratulations! 🎉 Your setup process is complete. "
+                "You can now start tracking changes in your Notion workspace.",
+            )
+            await storage.set_user_setup_status(chat_id, False)
 
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
-    prop_name = callback_data.get("prop_name")
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
 
     if not tracked_properties:
         tracked_properties = []
 
-    if prop_name in tracked_properties:
-        tracked_properties.remove(prop_name)
-        action = "removed from"
-    else:
-        tracked_properties.append(prop_name)
-        action = "added to"
-
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
 
-    message_id = await storage.get_tracked_properties_message_id(chat_id)
+    if tracked_properties:
+        text = f"Current tracked properties: {', '.join(tracked_properties)}"
+    else:
+        text = "No properties have been selected."
 
+    message_id = await storage.get_tracked_properties_message_id(chat_id)
     if not message_id:
         sent_message = await bot.send_message(
             chat_id,
-            f"Property {prop_name} has been {action} the tracked properties.\n"
-            f"Current tracked properties: {', '.join(tracked_properties) if tracked_properties else 'None'}",
+            text=text,
         )
         await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
     else:
-        if tracked_properties:
-            text = f"Current tracked properties: {', '.join(tracked_properties)}"
-        else:
-            text = "No properties have been selected."
         await bot.edit_message_text(
             chat_id=chat_id,
             message_id=message_id,

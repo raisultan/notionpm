@@ -92,3 +92,27 @@ async def get_tracked_properties_message_id(chat_id: str) -> Optional[int]:
         return message_id
     else:
         return None
+
+
+async def set_user_setup_status(chat_id: str, is_in_setup: bool) -> None:
+    user_key = f"user:{chat_id}"
+    user_data = await redis.get(user_key)
+
+    if user_data:
+        user_data = json.loads(user_data)
+    else:
+        user_data = {}
+
+    user_data["in_setup"] = is_in_setup
+    await redis.set(user_key, json.dumps(user_data))
+
+
+async def get_user_setup_status(chat_id: str) -> bool:
+    user_key = f"user:{chat_id}"
+    user_data = await redis.get(user_key)
+
+    if user_data:
+        user_data = json.loads(user_data)
+        return user_data.get("in_setup", False)
+    else:
+        return False
