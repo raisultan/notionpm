@@ -196,7 +196,3 @@ async def track_changes_for_all():
 
         logger.info(f'Changes for {chat_id}: {changes}')
     logger.info('Done!')
-
-
-if __name__ == "__main__":
-    app.run()

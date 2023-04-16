@@ -21,6 +21,8 @@ from notion_client import Client as NotionCLI
 
 import app.storage as storage
 from app.notion import list_databases
+from notifications import app as notification_app
+
 
 load_dotenv()
 
@@ -318,13 +320,18 @@ dp.register_message_handler(properties_done_handler, lambda message: message.tex
 async def main():
     app = web.Application()
     app.add_routes([web.get("/oauth/callback", handle_oauth)])
+
     runner = web.AppRunner(app)
     await runner.setup()
     tcp_server = web.TCPSite(runner, "localhost", 8080)
-
     await tcp_server.start()
-    await dp.start_polling()
 
+    dp_task = asyncio.create_task(dp.start_polling())
+    notification_task = asyncio.create_task(notification_app.start())
+
+    await asyncio.gather(dp_task, notification_task)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.close()
