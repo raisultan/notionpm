@@ -42,6 +42,8 @@ class PageChange:
 
 def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list[PageChange]:
     old, new = deepcopy(old), deepcopy(new)
+    if not old:
+        old = []
 
     # get page id lists for old and new
     old_ids = [page['id'] for page in old] if old else []
