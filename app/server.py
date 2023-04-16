@@ -21,7 +21,7 @@ from notion_client import Client as NotionCLI
 
 import app.storage as storage
 from app.notion import list_databases
-from notifications import app as notification_app
+from app.notifications import app as notification_app
 
 
 load_dotenv()
