@@ -317,21 +317,32 @@ dp.register_callback_query_handler(
 dp.register_message_handler(properties_done_handler, lambda message: message.text == 'Done selecting✅')
 
 
+tcp_server = None
+notification_task = None
+
 async def main():
     app = web.Application()
     app.add_routes([web.get("/oauth/callback", handle_oauth)])
-
     runner = web.AppRunner(app)
+    await runner.cleanup() # Added cleanup
     await runner.setup()
     tcp_server = web.TCPSite(runner, "localhost", 8080)
+
+    notification_task = asyncio.create_task(notification_app.run())
     await tcp_server.start()
+    await dp.start_polling()
+    await notification_task
 
-    dp_task = asyncio.create_task(dp.start_polling())
-    notification_task = asyncio.create_task(notification_app.start())
-
-    await asyncio.gather(dp_task, notification_task)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-    loop.close()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("Received Ctrl+C, shutting down...")
+        loop.run_until_complete(dp.stop_polling())
+        loop.run_until_complete(tcp_server.stop())
+        loop.run_until_complete(notification_task.cancel())
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+        print("Application has been shut down.")
