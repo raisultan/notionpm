@@ -11,7 +11,7 @@
 docker pull redis
 
 # run redis
-docker run --name notionpm-redis -d -p 6379:6379 redis
+docker run --name notionpm-redis -v /root/redis/data:/data -v /root/redis/redis.conf:/usr/local/etc/redis/redis.conf -p 6379:6379 -d redis redis-server /usr/local/etc/redis/redis.conf
 
 # access redis-cli
 docker exec -it notionpm-redis redis-cli
