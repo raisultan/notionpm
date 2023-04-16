@@ -271,17 +271,21 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
 
-    if tracked_properties:
-        await bot.send_message(
+    message_id = await storage.get_tracked_properties_message_id(chat_id)
+
+    if not message_id:
+        sent_message = await bot.send_message(
             chat_id,
             f"Property {prop_name} has been {action} the tracked properties.\n"
-            f"Current tracked properties: {', '.join(tracked_properties)}",
+            f"Current tracked properties: {', '.join(tracked_properties) if tracked_properties else 'None'}",
         )
+        await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
     else:
-        await bot.send_message(
-            chat_id,
-            f"Property {prop_name} has been {action} the tracked properties.\n"
-            "No properties are being tracked. Please select at least one property to track.",
+        await bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=message_id,
+            text=f"Property {prop_name} has been {action} the tracked properties.\n"
+            f"Current tracked properties: {', '.join(tracked_properties) if tracked_properties else 'None'}",
         )
 
 
