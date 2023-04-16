@@ -163,16 +163,17 @@ async def track_changes_for_all():
     for chat_id_key in chat_id_keys:
         chat_id = chat_id_key.split('_')[1]
         access_token = await storage.get_user_access_token(chat_id)
-        if not access_token:
-            logger.warning(f'No access token for {chat_id}! Skipping...')
+        db_id = await storage.get_user_db_id(chat_id)
+        track_props = await storage.get_user_tracked_properties(chat_id)
+
+        if not access_token or not db_id or not track_props:
+            logger.warning(f'Setup not completed for {chat_id}! Skipping...')
             continue
 
         try:
-            db_id = await storage.get_user_db_id(chat_id) 
             notion = NotionCLI(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)
-            track_props = await storage.get_user_tracked_properties(chat_id)
             changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
             await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
