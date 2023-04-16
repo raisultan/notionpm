@@ -44,7 +44,7 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
     old, new = deepcopy(old), deepcopy(new)
 
     # get page id lists for old and new
-    old_ids = [page['id'] for page in old]
+    old_ids = [page['id'] for page in old] if old else []
     new_ids = [page['id'] for page in new]
 
     # get added and possibly changed pages from new list
