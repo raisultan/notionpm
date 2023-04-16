@@ -268,10 +268,14 @@ async def properties_done_handler(message: types.Message):
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
+    prop_name = callback_data.get("prop_name")
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
 
     if not tracked_properties:
         tracked_properties = []
+
+    if prop_name not in tracked_properties:
+        tracked_properties.append(prop_name)
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
 
