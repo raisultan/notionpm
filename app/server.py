@@ -324,14 +324,12 @@ async def main():
     app = web.Application()
     app.add_routes([web.get("/oauth/callback", handle_oauth)])
     runner = web.AppRunner(app)
-    await runner.cleanup() # Added cleanup
     await runner.setup()
     tcp_server = web.TCPSite(runner, "localhost", 8080)
 
-    notification_task = asyncio.create_task(notification_app.run())
+    asyncio.create_task(notification_app.session.scheduler.serve())
     await tcp_server.start()
     await dp.start_polling()
-    await notification_task
 
 
 if __name__ == "__main__":
