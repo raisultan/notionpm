@@ -4,6 +4,7 @@ import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
+from aiogram.utils import exceptions
 from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -287,13 +288,14 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
         )
         await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
     else:
-        current_message = await (await bot.get_chat(chat_id)).fetch_message(message_id)
-        if current_message.text != new_text:
+        try:
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=message_id,
                 text=new_text,
             )
+        except exceptions.MessageNotModified:
+            pass
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
