@@ -147,9 +147,15 @@ async def choose_database_handler(message: types.Message):
     databases = list_databases(user_notion)
 
     if not databases:
+        await bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
+        return
+
+    if len(databases) == 1:
+        db = databases[0]
+        await storage.set_user_db_id(message.chat.id, db.id)
         await bot.send_message(
             message.chat.id,
-            "No databases found in your Notion workspace. Please reconnect your workspace and make sure you have at least one database available."
+            f"Default database has been set to {db.title} 🎉",
         )
         return
 
