@@ -281,6 +281,8 @@ async def properties_done_handler(message: types.Message):
             )
             await storage.set_user_setup_status(chat_id, False)
 
+        await choose_property_callback_handler(message)
+
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
