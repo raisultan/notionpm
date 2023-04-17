@@ -285,7 +285,9 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
     if not tracked_properties:
         tracked_properties = []
 
-    if prop_name not in tracked_properties:
+    if prop_name in tracked_properties:
+        tracked_properties.remove(prop_name)
+    else:
         tracked_properties.append(prop_name)
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
