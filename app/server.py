@@ -292,10 +292,10 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
     if not tracked_properties:
         tracked_properties = []
 
-    if prop_name in tracked_properties:
-        tracked_properties.remove(prop_name)
-    else:
+    if prop_name not in tracked_properties:
         tracked_properties.append(prop_name)
+    else:
+        tracked_properties.remove(prop_name)
 
     await storage.set_user_tracked_properties(chat_id, tracked_properties)
 
@@ -320,6 +320,8 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
             )
         except exceptions.MessageNotModified:
             pass
+
+    await properties_done_handler(callback_query.message)
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
