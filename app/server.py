@@ -299,22 +299,22 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
     else:
         new_text = "No properties have been selected."
 
-    message_id = await storage.get_tracked_properties_message_id(chat_id)
-    if not message_id:
-        sent_message = await bot.send_message(
-            chat_id,
-            text=new_text,
-        )
-        await storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
-    else:
+    sent_message_id = await storage.get_sent_message_id(chat_id)
+    if sent_message_id:
         try:
             await bot.edit_message_text(
                 chat_id=chat_id,
-                message_id=message_id,
+                message_id=sent_message_id,
                 text=new_text,
             )
         except exceptions.MessageNotModified:
             pass
+    else:
+        sent_message = await bot.send_message(
+            chat_id,
+            text=new_text,
+        )
+        await storage.set_sent_message_id(chat_id, sent_message.message_id)
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
