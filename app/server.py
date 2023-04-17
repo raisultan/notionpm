@@ -252,21 +252,18 @@ async def choose_properties_handler(message: types.Message):
 
 async def properties_done_handler(message: types.Message):
     chat_id = message.chat.id
-    sent_message_id = await storage.get_sent_message_id(chat_id)
-
-    if sent_message_id:
-        await bot.delete_message(chat_id, sent_message_id)
-        await storage.set_sent_message_id(chat_id, "")
-
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
+    
     if not tracked_properties:
-        await bot.send_message(
-            chat_id,
-            "You haven't selected any properties. Please choose at least one property to track.",
-            reply_markup=types.ReplyKeyboardRemove(),
-        )
+        await bot.send_message(chat_id, "No properties have been selected. Please choose at least one property.")
         await choose_properties_handler(message)
     else:
+        sent_message_id = await storage.get_sent_message_id(chat_id)
+
+        if sent_message_id:
+            await bot.delete_message(chat_id, sent_message_id)
+            await storage.set_sent_message_id(chat_id, "")
+
         await bot.send_message(
             chat_id,
             f"Selected properties: {', '.join(tracked_properties)}",
@@ -280,8 +277,6 @@ async def properties_done_handler(message: types.Message):
                 "You can now start tracking changes in your Notion workspace.",
             )
             await storage.set_user_setup_status(chat_id, False)
-
-        await choose_property_callback_handler(message)
 
 
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
@@ -320,8 +315,6 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
             )
         except exceptions.MessageNotModified:
             pass
-
-    await properties_done_handler(callback_query.message)
 
 
 dp.register_message_handler(send_welcome, commands=["start"])
