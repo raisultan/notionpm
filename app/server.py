@@ -147,7 +147,10 @@ async def choose_database_handler(message: types.Message):
     databases = list_databases(user_notion)
 
     if not databases:
-        await bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
+        await bot.send_message(
+            message.chat.id,
+            "No databases found in your Notion workspace. Please reconnect your workspace and make sure you have at least one database available."
+        )
         return
 
     inline_keyboard = []
@@ -155,7 +158,7 @@ async def choose_database_handler(message: types.Message):
     for db in databases:
         button = InlineKeyboardButton(
             db.title,
-            callback_data=choose_db_callback_data.new(db_id=db.id,db_title=db.title),
+            callback_data=choose_db_callback_data.new(db_id=db.id, db_title=db.title),
         )
         inline_keyboard.append([button])
 
