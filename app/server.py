@@ -34,6 +34,14 @@ NOTION_CLIENT_SECRET = os.environ["NOTION_CLIENT_SECRET"]
 NOTION_REDIRECT_URI = os.environ["NOTION_REDIRECT_URI"]
 BOT_URL = os.environ["BOT_URL"]
 
+SUPPORTED_PROPERTY_TYPES = [
+    'title',
+    'status',
+    'date',
+    'people',
+    'url',
+]
+
 
 async def make_oauth_request(code: str):
     auth_creds = f"{NOTION_CLIENT_ID}:{NOTION_CLIENT_SECRET}"
@@ -219,10 +227,14 @@ async def choose_properties_handler(message: types.Message):
         return
 
     database = user_notion.databases.retrieve(db_id)
-    properties = database['properties']
+    supported_properties = {
+        prop_name: prop
+        for prop_name, prop in database['properties'].items()
+        if prop['type'] in SUPPORTED_PROPERTY_TYPES
+    }
     property_buttons = []
 
-    for prop_name, _ in properties.items():
+    for prop_name, _ in supported_properties.items():
         button = InlineKeyboardButton(
             prop_name,
             callback_data=choose_property_callback_data.new(prop_name=prop_name),
