@@ -165,6 +165,7 @@ async def choose_database_handler(message: types.Message):
             message.chat.id,
             f"Default database has been set to {db.title} 🎉",
         )
+        await check_and_continue_setup(message)
         return
 
     inline_keyboard = []
