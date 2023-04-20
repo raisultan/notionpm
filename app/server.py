@@ -274,6 +274,7 @@ async def properties_done_handler(message: types.Message):
         if sent_message_id:
             await bot.delete_message(chat_id, sent_message_id)
             await storage.set_sent_message_id(chat_id, "")
+            await storage.delete_tracked_properties_message_id(chat_id)
 
         await bot.send_message(
             chat_id,

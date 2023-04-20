@@ -94,6 +94,17 @@ async def get_tracked_properties_message_id(chat_id: str) -> Optional[int]:
         return None
 
 
+async def delete_tracked_properties_message_id(chat_id: str) -> None:
+    user_key = f"user:{chat_id}"
+    user_data = await redis.get(user_key)
+
+    if user_data:
+        user_data = json.loads(user_data)
+        if "tracked_properties_message_id" in user_data:
+            del user_data["tracked_properties_message_id"]
+            await redis.set(user_key, json.dumps(user_data))
+
+
 async def set_user_setup_status(chat_id: str, is_in_setup: bool) -> None:
     user_key = f"user:{chat_id}"
     user_data = await redis.get(user_key)
