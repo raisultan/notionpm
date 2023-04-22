@@ -157,13 +157,12 @@ app = Rocketry()
 @app.task(every('10 seconds'))
 async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
-    chat_id_keys = await storage.get_all_chat_ids()
-    if not chat_id_keys:
+    chat_ids = await storage.get_all_chat_ids()
+    if not chat_ids:
         logger.warning('No chat ids found!')
         return
 
-    for chat_id_key in chat_id_keys:
-        chat_id = chat_id_key.split('_')[1]
+    for chat_id in chat_ids:
         access_token = await storage.get_user_access_token(chat_id)
         db_id = await storage.get_user_db_id(chat_id)
         track_props = await storage.get_user_tracked_properties(chat_id)
