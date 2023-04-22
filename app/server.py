@@ -55,13 +55,13 @@ async def handle_oauth(request: Request):
     chat_id = await notion_oauth.handle_oauth(request)
     if chat_id:
         message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
-        await check_and_continue_setup(message)
+        await skip_or_continue_setup(message)
         return web.HTTPFound(BOT_URL)
     else:
         return web.Response(status=400)
 
 
-async def check_and_continue_setup(message: types.Message):
+async def skip_or_continue_setup(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
         await send_login_url(message)
@@ -84,7 +84,7 @@ async def check_and_continue_setup(message: types.Message):
 
 
 async def send_welcome(message: types.Message):
-    await check_and_continue_setup(message)
+    await skip_or_continue_setup(message)
 
 
 async def send_login_url(message: types.Message):
@@ -132,7 +132,7 @@ async def choose_database_handler(message: types.Message):
             message.chat.id,
             f"Default database has been set to {db.title} 🎉",
         )
-        await check_and_continue_setup(message)
+        await skip_or_continue_setup(message)
         return
 
     inline_keyboard = []
@@ -169,7 +169,7 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
         chat_id,
         f"Default database has been set to {callback_data.get('db_title')} 🎉",
     )
-    await check_and_continue_setup(callback_query.message)
+    await skip_or_continue_setup(callback_query.message)
 
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
