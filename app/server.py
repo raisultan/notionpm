@@ -52,7 +52,7 @@ SUPPORTED_PROPERTY_TYPES = [
 
 
 async def handle_oauth(request: Request):
-    chat_id = notion_oauth.handle_oauth(request)
+    chat_id = await notion_oauth.handle_oauth(request)
     if chat_id:
         message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
         await check_and_continue_setup(message)
