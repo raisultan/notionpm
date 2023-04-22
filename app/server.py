@@ -269,11 +269,10 @@ async def properties_done_handler(message: types.Message):
         await bot.send_message(chat_id, "No properties have been selected. Please choose at least one property.")
         await choose_properties_handler(message)
     else:
-        sent_message_id = await storage.get_sent_message_id(chat_id)
+        sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
 
         if sent_message_id:
             await bot.delete_message(chat_id, sent_message_id)
-            await storage.set_sent_message_id(chat_id, "")
             await storage.delete_tracked_properties_message_id(chat_id)
 
         await bot.send_message(
