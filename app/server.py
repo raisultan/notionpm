@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import os
+import signal
 
 import aiohttp
 from aiogram import Bot, Dispatcher, types
@@ -56,13 +57,15 @@ async def make_oauth_request(code: str):
         "redirect_uri": NOTION_REDIRECT_URI,
     }
 
-    http_client = aiohttp.ClientSession()
-    response = await http_client.post(
-        "https://api.notion.com/v1/oauth/token",
-        json=json,
-        headers=headers,
-    )
-    return await response.json()
+    async with aiohttp.ClientSession() as http_client:
+        response = await http_client.post(
+            "https://api.notion.com/v1/oauth/token",
+            json=json,
+            headers=headers,
+        )
+        response_json = await response.json()
+        await response.release()
+    return response_json
 
 
 async def handle_oauth(request: Request):
@@ -348,30 +351,48 @@ dp.register_callback_query_handler(
 dp.register_message_handler(properties_done_handler, lambda message: message.text == 'Done selecting✅')
 
 
-tcp_server = None
-notification_task = None
-
 async def main():
+    global app
     app = web.Application()
     app.add_routes([web.get("/oauth/callback", handle_oauth)])
+
+    global runner
     runner = web.AppRunner(app)
     await runner.setup()
+
+    global tcp_server
     tcp_server = web.TCPSite(runner, "localhost", 8080)
 
-    asyncio.create_task(notification_app.session.scheduler.serve())
+    global notification_app
+    notification_app = asyncio.create_task(notification_app.session.scheduler.serve())
+
     await tcp_server.start()
     await dp.start_polling()
 
 
+async def shutdown(signal, loop):
+    print(f"\nReceived {signal.name} signal, shutting down...")
+    notification_app.cancel()
+
+    dp.stop_polling()
+    await dp.wait_closed()
+    await bot.close()
+
+    await tcp_server.stop()
+    await runner.cleanup()
+    await app.cleanup()
+    await loop.shutdown_asyncgens()
+    loop.stop()
+
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
+
+    for signal in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(signal, lambda s=signal: asyncio.create_task(shutdown(s, loop)))
+
     try:
         loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        print("Received Ctrl+C, shutting down...")
-        loop.run_until_complete(dp.stop_polling())
-        loop.run_until_complete(tcp_server.stop())
-        loop.run_until_complete(notification_task.cancel())
-        loop.run_until_complete(loop.shutdown_asyncgens())
+    finally:
         loop.close()
         print("Application has been shut down.")
