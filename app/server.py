@@ -1,9 +1,7 @@
 import asyncio
-import base64
 import os
 import signal
 
-import aiohttp
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import exceptions
 from aiogram.types import (
@@ -24,6 +22,8 @@ import app.storage as storage
 from app.notion import list_databases
 from app.notifications import app as notification_app
 
+from v0_1.notion_oauth import NotionOAuth
+
 
 load_dotenv()
 
@@ -35,6 +35,14 @@ NOTION_CLIENT_SECRET = os.environ["NOTION_CLIENT_SECRET"]
 NOTION_REDIRECT_URI = os.environ["NOTION_REDIRECT_URI"]
 BOT_URL = os.environ["BOT_URL"]
 
+notion_oauth = NotionOAuth(
+    storage=storage,
+    client_id=NOTION_CLIENT_ID,
+    client_secret=NOTION_CLIENT_SECRET,
+    redirect_uri=NOTION_REDIRECT_URI,
+    bot_url=BOT_URL,
+)
+
 SUPPORTED_PROPERTY_TYPES = [
     'title',
     'status',
@@ -44,56 +52,13 @@ SUPPORTED_PROPERTY_TYPES = [
 ]
 
 
-async def make_oauth_request(code: str):
-    auth_creds = f"{NOTION_CLIENT_ID}:{NOTION_CLIENT_SECRET}"
-    encoded_auth_creds = base64.b64encode(auth_creds.encode("ascii")).decode("ascii")
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Basic {encoded_auth_creds}",
-    }
-    json = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": NOTION_REDIRECT_URI,
-    }
-
-    async with aiohttp.ClientSession() as http_client:
-        response = await http_client.post(
-            "https://api.notion.com/v1/oauth/token",
-            json=json,
-            headers=headers,
-        )
-        response_json = await response.json()
-        await response.release()
-    return response_json
-
-
 async def handle_oauth(request: Request):
-    code = request.query.get("code")
-    state = request.query.get("state")
-    if state and "-" in state:
-        chat_id = state.split("-")[1]
-    else:
-        chat_id = None
-
-    if not (code and chat_id):
-        return web.Response(status=400)
-
-    try:
-        response = await make_oauth_request(code)
-
-        access_token = response.get("access_token")
-        notion = NotionCLI(auth=access_token)
-        blocks = notion.search()
-        print(blocks)
-
-        await storage.save_user_access_token(chat_id, access_token)
-
+    chat_id = notion_oauth.handle_oauth(request)
+    if chat_id:
         message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
         await check_and_continue_setup(message)
         return web.HTTPFound(BOT_URL)
-    except Exception as e:
-        print(e)
+    else:
         return web.Response(status=400)
 
 
