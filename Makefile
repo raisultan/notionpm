@@ -13,7 +13,7 @@ start-app:
 	python3 -m app.server
 
 restart-all:
-@echo "Stopping Redis..."
+	@echo "Stopping Redis..."
 	docker stop notionpm-redis
 
 	@echo "Removing Redis..."
