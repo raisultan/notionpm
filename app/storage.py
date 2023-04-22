@@ -18,10 +18,10 @@ async def get_user_access_token(chat_id: str) -> Optional[str]:
 
 
 async def get_all_chat_ids() -> list:
-    chat_ids = await redis.keys('chat_*')
+    chat_ids = await redis.keys('access_token_*')
     if not chat_ids:
         return []
-    return [chat_id.decode('utf-8') for chat_id in chat_ids]
+    return [chat_id.decode('utf-8').split('token_')[1] for chat_id in chat_ids]
 
 
 async def set_user_db_id(chat_id: str, db_id: str) -> None:
