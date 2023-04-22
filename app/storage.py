@@ -73,11 +73,11 @@ async def delete_tracked_properties_message_id(chat_id: str) -> None:
 
 
 async def set_user_setup_status(chat_id: str, is_in_setup: bool) -> None:
-    await redis.set(f'in_setup_{chat_id}', is_in_setup)
+    await redis.set(f'in_setup_{chat_id}', int(is_in_setup))
 
 
 async def get_user_setup_status(chat_id: str) -> bool:
     is_in_setup = await redis.get(f'in_setup_{chat_id}')
     if not is_in_setup:
         return False
-    return bool(is_in_setup)
+    return bool(int(is_in_setup.decode('utf-8')))
