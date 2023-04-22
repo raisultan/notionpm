@@ -58,17 +58,6 @@ async def get_user_tracked_properties(chat_id: str) -> Optional[list]:
     return json.loads(tracked_properties)
 
 
-async def set_sent_message_id(chat_id: str, message_id: int) -> None:
-    await redis.set(f'sent_message_id_{chat_id}', message_id)
-
-
-async def get_sent_message_id(chat_id: str) -> Optional[int]:
-    message_id = await redis.get(f'sent_message_id_{chat_id}')
-    if not message_id:
-        return None
-    return int(message_id.decode('utf-8'))
-
-
 async def set_tracked_properties_message_id(chat_id: str, message_id: int) -> None:
     user_key = f"user:{chat_id}"
     user_data = await redis.get(user_key)
