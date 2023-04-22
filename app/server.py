@@ -264,7 +264,7 @@ async def choose_properties_handler(message: types.Message):
 async def properties_done_handler(message: types.Message):
     chat_id = message.chat.id
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
-    
+
     if not tracked_properties:
         await bot.send_message(chat_id, "No properties have been selected. Please choose at least one property.")
         await choose_properties_handler(message)
