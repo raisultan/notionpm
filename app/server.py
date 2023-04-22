@@ -207,13 +207,13 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
 async def choose_properties_handler(message: types.Message):
+    chat_id = message.chat.id
+    access_token = await storage.get_user_access_token(chat_id)
+
     sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
     if sent_message_id:
         await bot.delete_message(chat_id, sent_message_id)
         await storage.delete_tracked_properties_message_id(chat_id)
-
-    chat_id = message.chat.id
-    access_token = await storage.get_user_access_token(chat_id)
 
     if not access_token:
         await bot.send_message(
