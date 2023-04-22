@@ -90,7 +90,7 @@ async def delete_tracked_properties_message_id(chat_id: str) -> None:
     if user_data:
         user_data = json.loads(user_data)
         if "tracked_properties_message_id" in user_data:
-            del user_data["tracked_properties_message_id"]
+            user_data["tracked_properties_message_id"] = None
             await redis.set(user_key, json.dumps(user_data))
 
 
