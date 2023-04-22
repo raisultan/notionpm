@@ -40,7 +40,6 @@ notion_oauth = NotionOAuth(
     client_id=NOTION_CLIENT_ID,
     client_secret=NOTION_CLIENT_SECRET,
     redirect_uri=NOTION_REDIRECT_URI,
-    bot_url=BOT_URL,
 )
 
 SUPPORTED_PROPERTY_TYPES = [
