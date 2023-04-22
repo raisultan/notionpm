@@ -265,16 +265,15 @@ async def properties_done_handler(message: types.Message):
     chat_id = message.chat.id
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
 
+    sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
+    if sent_message_id:
+        await bot.delete_message(chat_id, sent_message_id)
+        await storage.delete_tracked_properties_message_id(chat_id)
+
     if not tracked_properties:
         await bot.send_message(chat_id, "No properties have been selected. Please choose at least one property.")
         await choose_properties_handler(message)
     else:
-        sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
-
-        if sent_message_id:
-            await bot.delete_message(chat_id, sent_message_id)
-            await storage.delete_tracked_properties_message_id(chat_id)
-
         await bot.send_message(
             chat_id,
             f"Selected properties: {', '.join(tracked_properties)}",
