@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import os
-
 import aiohttp
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import exceptions
@@ -37,7 +36,8 @@ BOT_URL = os.environ["BOT_URL"]
 
 async def make_oauth_request(code: str):
     auth_creds = f"{NOTION_CLIENT_ID}:{NOTION_CLIENT_SECRET}"
-    encoded_auth_creds = base64.b64encode(auth_creds.encode("ascii")).decode("ascii")
+    encoded_auth_creds = base64.b64encode(
+        auth_creds.encode("ascii")).decode("ascii")
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Basic {encoded_auth_creds}",
@@ -78,7 +78,8 @@ async def handle_oauth(request: Request):
 
         await storage.save_user_access_token(chat_id, access_token)
 
-        message = types.Message(chat=types.Chat(id=int(chat_id), type='private'))
+        message = types.Message(chat=types.Chat(
+            id=int(chat_id), type='private'))
         await check_and_continue_setup(message)
         return web.HTTPFound(BOT_URL)
     except Exception as e:
@@ -124,15 +125,19 @@ async def send_login_url(message: types.Message):
     button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
     markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
     reply = f"Connect your Notion workspace"
-    await bot.send_message(
+
+    sent_connect_message_id = await bot.send_message(
         message.chat.id,
         reply,
         reply_markup=markup,
         parse_mode=ParseMode.HTML,
     )
+    await storage.set_connect_msg_id(message.chat.id, sent_connect_message_id.message_id)
 
 
 choose_db_callback_data = CallbackData("choose_db", "db_id", "db_title")
+
+
 async def choose_database_handler(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
 
@@ -152,7 +157,7 @@ async def choose_database_handler(message: types.Message):
 
     if len(databases) == 1:
         db = databases[0]
-        await storage.set_user_db_id(message.chat.id, db.id)
+
         await bot.send_message(
             message.chat.id,
             f"Default database has been set to {db.title} 🎉",
@@ -164,7 +169,8 @@ async def choose_database_handler(message: types.Message):
     for db in databases:
         button = InlineKeyboardButton(
             db.title,
-            callback_data=choose_db_callback_data.new(db_id=db.id, db_title=db.title),
+            callback_data=choose_db_callback_data.new(
+                db_id=db.id, db_title=db.title),
         )
         inline_keyboard.append([button])
 
@@ -188,15 +194,22 @@ async def choose_db_callback_handler(callback_query: CallbackQuery, callback_dat
     db_id = callback_data.get("db_id")
     chat_id = callback_query.message.chat.id
 
+    msg_ids = [callback_query.message.message_id, await storage.get_connect_msg_id(chat_id)]
+    for msg_id in msg_ids:
+        await bot.delete_message(chat_id, msg_id)
+
     await storage.set_user_db_id(chat_id, db_id)
     await bot.send_message(
         chat_id,
-        f"Default database has been set to {callback_data.get('db_title')} 🎉",
+        f"Yeah,Default database has been set to {callback_data.get('db_title')} 🎉",
     )
+
     await check_and_continue_setup(callback_query.message)
 
 
 choose_property_callback_data = CallbackData("choose_property", "prop_name")
+
+
 async def choose_properties_handler(message: types.Message):
     chat_id = message.chat.id
     access_token = await storage.get_user_access_token(chat_id)
@@ -225,14 +238,16 @@ async def choose_properties_handler(message: types.Message):
     for prop_name, _ in properties.items():
         button = InlineKeyboardButton(
             prop_name,
-            callback_data=choose_property_callback_data.new(prop_name=prop_name),
+            callback_data=choose_property_callback_data.new(
+                prop_name=prop_name),
         )
         property_buttons.append([button])
 
     markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
 
     done_button = KeyboardButton("Done selecting✅")
-    done_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    done_markup = ReplyKeyboardMarkup(
+        resize_keyboard=True, one_time_keyboard=True)
     done_markup.add(done_button)
 
     await bot.send_message(
@@ -251,7 +266,7 @@ async def choose_properties_handler(message: types.Message):
 async def properties_done_handler(message: types.Message):
     chat_id = message.chat.id
     tracked_properties = await storage.get_user_tracked_properties(chat_id)
-    
+
     if not tracked_properties:
         await bot.send_message(chat_id, "No properties have been selected. Please choose at least one property.")
         await choose_properties_handler(message)
@@ -317,19 +332,23 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
 
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
-dp.register_message_handler(choose_database_handler, commands=["choose_database"])
+dp.register_message_handler(choose_database_handler,
+                            commands=["choose_database"])
 dp.register_callback_query_handler(
     choose_db_callback_handler, choose_db_callback_data.filter()
 )
-dp.register_message_handler(choose_properties_handler, commands=["choose_properties"])
+dp.register_message_handler(
+    choose_properties_handler, commands=["choose_properties"])
 dp.register_callback_query_handler(
     choose_property_callback_handler, choose_property_callback_data.filter()
 )
-dp.register_message_handler(properties_done_handler, lambda message: message.text == 'Done selecting✅')
+dp.register_message_handler(properties_done_handler,
+                            lambda message: message.text == 'Done selecting✅')
 
 
 tcp_server = None
 notification_task = None
+
 
 async def main():
     app = web.Application()

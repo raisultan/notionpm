@@ -61,7 +61,8 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
             new_for_tracking_props.append(page)
 
     # get removed and possibly changed pages from old list
-    removed_page_ids = [page_id for page_id in old_ids if page_id not in new_ids]
+    removed_page_ids = [
+        page_id for page_id in old_ids if page_id not in new_ids]
     print(f'Removed: {removed_page_ids}')
     removed_pages = []
     old_for_tracking_props = []
@@ -72,8 +73,10 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
             old_for_tracking_props.append(page)
 
     # track changes in properties of new and old
-    old_for_tracking_props = sorted(old_for_tracking_props, key=lambda page: page['id'])
-    new_for_tracking_props = sorted(new_for_tracking_props, key=lambda page: page['id'])
+    old_for_tracking_props = sorted(
+        old_for_tracking_props, key=lambda page: page['id'])
+    new_for_tracking_props = sorted(
+        new_for_tracking_props, key=lambda page: page['id'])
 
     db_changes = []
     for old_page, new_page in zip(old_for_tracking_props, new_for_tracking_props):
@@ -82,8 +85,10 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
         page_property_changes = []
         for prop in props:
             if old_page_props[prop] != new_page_props[prop]:
-                old_value, new_value = track_change_on_property(old_page_props[prop], new_page_props[prop])
-                page_property_changes.append(PropertyChange(prop, old_value, new_value))
+                old_value, new_value = track_change_on_property(
+                    old_page_props[prop], new_page_props[prop])
+                page_property_changes.append(
+                    PropertyChange(prop, old_value, new_value))
         if page_property_changes:
             db_changes.append(
                 PageChange(
@@ -143,16 +148,17 @@ def create_properties_changed_message_with_button(page_change: PageChange) -> tu
             f"{escape_html(str(field_change.new_value))}\n\n"
         )
         messages.append(field_message)
-    message = f"📄 Changes in {escape_html(page_change.name)}:\n\n{''.join(messages)}"
 
-    markup = InlineKeyboardMarkup()
-    task_button = InlineKeyboardButton(text="View page 🔗", url=page_change.url)
-    markup.add(task_button)
+    message = (
+        f"📄 Changes in <a href='{escape_html(page_change.url)}'>{escape_html(page_change.name)}</a>:\n\n"
+        f"{''.join(messages)}"
+    )
 
-    return message, markup
+    return message
 
 
 app = Rocketry()
+
 
 @app.task(every('10 seconds'))
 async def track_changes_for_all():
@@ -176,7 +182,8 @@ async def track_changes_for_all():
             notion = NotionCLI(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)
-            changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
+            changes = track_db_changes(
+                old_db_state, new_db_state['results'], track_props)
             await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
             logger.exception(f'Exception for {chat_id}: {repr(e)}')
@@ -186,13 +193,12 @@ async def track_changes_for_all():
             continue
 
         for page_change in changes:
-            change_message, button_markup = create_properties_changed_message_with_button(
+            change_message = create_properties_changed_message_with_button(
                 page_change,
             )
             await bot.send_message(
                 chat_id,
                 change_message,
-                reply_markup=button_markup,
                 parse_mode=ParseMode.HTML,
             )
 

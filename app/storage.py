@@ -74,7 +74,10 @@ async def set_tracked_properties_message_id(chat_id: str, message_id: int) -> No
     user_data = await redis.get(user_key)
 
     if user_data:
-        user_data = json.loads(user_data)
+        try:
+            user_data = json.loads(user_data)
+        except Exception:
+            user_data = {}
     else:
         user_data = {}
 
@@ -87,7 +90,11 @@ async def get_tracked_properties_message_id(chat_id: str) -> Optional[int]:
     user_data = await redis.get(user_key)
 
     if user_data:
-        user_data = json.loads(user_data)
+        try:
+            user_data = json.loads(user_data)
+        except Exception:
+            user_data = {}
+
         message_id = user_data.get("tracked_properties_message_id")
         return message_id
     else:
@@ -116,3 +123,14 @@ async def get_user_setup_status(chat_id: str) -> bool:
         return user_data.get("in_setup", False)
     else:
         return False
+
+
+async def set_connect_msg_id(chat_id: str, message_id: int) -> None:
+    await redis.set(f'sent_connect_message_id_{chat_id}', message_id)
+
+
+async def get_connect_msg_id(chat_id: str) -> Optional[int]:
+    message_id = await redis.get(f'sent_connect_message_id_{chat_id}')
+    if not message_id:
+        return None
+    return int(message_id.decode('utf-8'))
