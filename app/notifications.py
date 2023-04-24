@@ -143,13 +143,13 @@ def create_properties_changed_message_with_button(page_change: PageChange) -> tu
             f"{escape_html(str(field_change.new_value))}\n\n"
         )
         messages.append(field_message)
-    message = f"📄 Changes in {escape_html(page_change.name)}:\n\n{''.join(messages)}"
 
-    markup = InlineKeyboardMarkup()
-    task_button = InlineKeyboardButton(text="View page 🔗", url=page_change.url)
-    markup.add(task_button)
+    message = (
+        f"📄 Changes in <a href='{escape_html(page_change.url)}'>{escape_html(page_change.name)}</a>:\n\n"
+        f"{''.join(messages)}"
+    )
 
-    return message, markup
+    return message
 
 
 app = Rocketry()
@@ -185,13 +185,10 @@ async def track_changes_for_all():
             continue
 
         for page_change in changes:
-            change_message, button_markup = create_properties_changed_message_with_button(
-                page_change,
-            )
+            change_message = create_properties_changed_message_with_button(page_change)
             await bot.send_message(
                 chat_id,
                 change_message,
-                reply_markup=button_markup,
                 parse_mode=ParseMode.HTML,
             )
 
