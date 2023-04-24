@@ -99,21 +99,24 @@ async def send_login_url(message: types.Message):
     button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
     markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
     reply = f"Connect your Notion workspace"
-    await bot.send_message(
+
+    connect_message = await bot.send_message(
         message.chat.id,
         reply,
         reply_markup=markup,
         parse_mode=ParseMode.HTML,
     )
+    await storage.set_connect_message_id(message.chat.id, connect_message.message_id)
 
 
 choose_db_callback_data = CallbackData("choose_db", "db_id", "db_title")
 async def choose_database_handler(message: types.Message):
-    access_token = await storage.get_user_access_token(message.chat.id)
+    chat_id = message.chat.id
+    access_token = await storage.get_user_access_token(chat_id)
 
     if not access_token:
         await bot.send_message(
-            message.chat.id,
+            chat_id,
             "You need to connect your Notion workspace first. Use the /login command to connect.",
         )
         return
@@ -125,12 +128,16 @@ async def choose_database_handler(message: types.Message):
         await bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
         return
 
+    connect_message_id = await storage.get_connect_message_id(message.chat.id)
+    if connect_message_id:
+        await bot.delete_message()
+
     if len(databases) == 1:
         db = databases[0]
         await storage.set_user_db_id(message.chat.id, db.id)
         await bot.send_message(
             message.chat.id,
-            f"Default database has been set to {db.title} 🎉",
+            f"Yeah, default database has been set to {db.title} 🎉",
         )
         await skip_or_continue_setup(message)
         return
