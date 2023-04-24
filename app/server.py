@@ -130,7 +130,7 @@ async def choose_database_handler(message: types.Message):
 
     connect_message_id = await storage.get_connect_message_id(message.chat.id)
     if connect_message_id:
-        await bot.delete_message()
+        await bot.delete_message(chat_id, connect_message_id)
 
     if len(databases) == 1:
         db = databases[0]
