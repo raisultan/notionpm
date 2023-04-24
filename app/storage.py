@@ -81,3 +81,14 @@ async def get_user_setup_status(chat_id: str) -> bool:
     if not is_in_setup:
         return False
     return bool(int(is_in_setup.decode('utf-8')))
+
+
+async def set_connect_message_id(chat_id: str, message_id: int) -> None:
+    await redis.set(f'sent_connect_message_id_{chat_id}', message_id)
+
+
+async def get_connect_message_id(chat_id: str) -> Optional[int]:
+    message_id = await redis.get(f'sent_connect_message_id_{chat_id}')
+    if not message_id:
+        return None
+    return int(message_id.decode('utf-8'))
