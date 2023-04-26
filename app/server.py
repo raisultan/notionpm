@@ -372,7 +372,9 @@ async def on_chat_member_updated(update: types.ChatMemberUpdated):
     else:
         return
 
-dp.register_chat_member_handler(on_chat_member_updated)
+dp.register_message_handler(
+    on_chat_member_updated, content_types=[types.ContentType.NEW_CHAT_MEMBERS]
+)
 
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
@@ -410,7 +412,7 @@ async def shutdown(signal, loop):
     print(f"\nReceived {signal.name} signal, shutting down...")
     notification_app.cancel()
 
-    dp.stop_polling(allowed_updates=['message', 'callback_query', 'chat_member'])
+    dp.stop_polling()
     await dp.wait_closed()
     await bot.close()
 
