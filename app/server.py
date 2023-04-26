@@ -315,6 +315,8 @@ async def set_notification_handler(message: types.Message):
     bot_username = (await bot.me).username
     add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
 
+    print(f'FROM USER MEMBER: {message.from_user.id}')
+
     private_button = types.InlineKeyboardButton(
         "Stay here 👨‍💻",
         callback_data=set_notification_callback_data.new(notification_type="private")
@@ -356,6 +358,8 @@ async def on_chat_member_updated(update: types.ChatMemberUpdated):
     from_user_id = update.from_user.id
     bot_user = await bot.me
 
+    print(f'FROM USER MEMBER: {from_user_id}')
+
     if update.new_chat_member.status == 'member' and update.new_chat_member.user.id == bot_user.id:
         await storage.set_user_notification_type(from_user_id, "group")
         await storage.set_user_notification_chat_id(from_user_id, chat_id)
@@ -365,6 +369,8 @@ async def on_chat_member_updated(update: types.ChatMemberUpdated):
             chat_id,
             "Great! Notifications will be sent to this group chat. 🎉",
         )
+    else:
+        return
 
 dp.register_chat_member_handler(on_chat_member_updated)
 
@@ -404,7 +410,7 @@ async def shutdown(signal, loop):
     print(f"\nReceived {signal.name} signal, shutting down...")
     notification_app.cancel()
 
-    dp.stop_polling()
+    dp.stop_polling(allowed_updates=['message', 'callback_query', 'chat_member'])
     await dp.wait_closed()
     await bot.close()
 
