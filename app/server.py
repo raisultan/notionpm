@@ -353,14 +353,14 @@ dp.register_callback_query_handler(
     set_notification_callback_handler, set_notification_callback_data.filter()
 )
 
-async def on_chat_member_updated(update: types.ChatMemberUpdated):
-    chat_id = update.chat.id
-    from_user_id = update.from_user.id
+async def on_chat_member_updated(message: types.Message):
+    chat_id = message.chat.id
+    from_user_id = message.from_user.id
     bot_user = await bot.me
 
     print(f'FROM USER MEMBER: {from_user_id}')
 
-    if update.new_chat_member.status == 'member' and update.new_chat_member.user.id == bot_user.id:
+    if message.new_chat_members[0].is_bot == 'member' and message.new_chat_members[0].id == bot_user.id:
         await storage.set_user_notification_type(from_user_id, "group")
         await storage.set_user_notification_chat_id(from_user_id, chat_id)
 
