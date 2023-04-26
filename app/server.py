@@ -309,6 +309,65 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
             pass
 
 
+set_notification_callback_data = CallbackData("set_notification", "notification_type")
+async def set_notification_handler(message: types.Message):
+    chat_id = message.chat.id
+    bot_username = (await bot.me).username
+    add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
+
+    private_button = types.InlineKeyboardButton(
+        "Stay here 👨‍💻",
+        callback_data=set_notification_callback_data.new(notification_type="private")
+    )
+    group_button = types.InlineKeyboardButton(
+        "Track in group chat 👥",
+        url=add_to_group_url,
+    )
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[[private_button, group_button]])
+
+    await bot.send_message(
+        chat_id,
+        "Choose where you would like to receive notifications:",
+        reply_markup=markup,
+    )
+
+dp.register_message_handler(set_notification_handler, commands=["set_notification"])
+
+async def set_notification_callback_handler(callback_query: CallbackQuery, callback_data: dict):
+    chat_id = callback_query.message.chat.id
+    notification_type = callback_data.get("notification_type")
+
+    if notification_type == "private":
+        await storage.set_user_notification_type(chat_id, "private")
+        await storage.set_user_notification_chat_id(callback_query.from_user.id, chat_id)
+        await bot.send_message(
+            chat_id,
+            "Roger that! I will send you notifications in this chat 🤖",
+        )
+    else:
+        await bot.send_message(chat_id, "Something went wrong, please try again 🥺")
+
+dp.register_callback_query_handler(
+    set_notification_callback_handler, set_notification_callback_data.filter()
+)
+
+async def on_chat_member_updated(update: types.ChatMemberUpdated):
+    chat_id = update.chat.id
+    from_user_id = update.from_user.id
+    bot_user = await bot.me
+
+    if update.new_chat_member.status == 'member' and update.new_chat_member.user.id == bot_user.id:
+        await storage.set_user_notification_type(from_user_id, "group")
+        await storage.set_user_notification_chat_id(from_user_id, chat_id)
+
+        # Send a message to the group chat to confirm that notifications will be sent there
+        await bot.send_message(
+            chat_id,
+            "Great! Notifications will be sent to this group chat. 🎉",
+        )
+
+dp.register_chat_member_handler(on_chat_member_updated)
+
 dp.register_message_handler(send_welcome, commands=["start"])
 dp.register_message_handler(send_login_url, commands=["login"])
 dp.register_message_handler(choose_database_handler, commands=["choose_database"])
