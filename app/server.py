@@ -359,8 +359,14 @@ async def on_chat_member_updated(message: types.Message):
     bot_user = await bot.me
 
     print(f'FROM USER MEMBER: {from_user_id}')
+    await bot.send_message(
+        chat_id,
+        "HALOOOO",
+    )
+    print(f'IS NEW CHAT MEBER BOT: {message.new_chat_members[0].is_bot}')
+    print(f'IS NEW CHAT MEBER OUR BOT: {message.new_chat_members[0].id == bot_user.id}')
 
-    if message.new_chat_members[0].is_bot == 'member' and message.new_chat_members[0].id == bot_user.id:
+    if message.new_chat_members[0].is_bot and message.new_chat_members[0].id == bot_user.id:
         await storage.set_user_notification_type(from_user_id, "group")
         await storage.set_user_notification_chat_id(from_user_id, chat_id)
 
