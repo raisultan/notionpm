@@ -243,37 +243,6 @@ async def choose_properties_handler(message: types.Message):
     )
 
 
-async def properties_done_handler(message: types.Message):
-    chat_id = message.chat.id
-    tracked_properties = await storage.get_user_tracked_properties(chat_id)
-
-    sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
-    if sent_message_id:
-        await bot.delete_message(chat_id, sent_message_id)
-        await storage.delete_tracked_properties_message_id(chat_id)
-
-    if not tracked_properties:
-        await bot.send_message(
-            chat_id,
-            "No properties have been selected. Please choose at least one property.",
-        )
-        await choose_properties_handler(message)
-    else:
-        await bot.send_message(
-            chat_id,
-            f"Selected properties: {', '.join(tracked_properties)}",
-            reply_markup=types.ReplyKeyboardRemove(),
-        )
-        is_in_setup = await storage.get_user_setup_status(chat_id)
-        if is_in_setup:
-            await bot.send_message(
-                chat_id,
-                "Congratulations! 🎉 Your setup process is complete. "
-                "You can now start tracking changes in your Notion workspace.",
-            )
-            await storage.set_user_setup_status(chat_id, False)
-
-
 async def choose_property_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
     prop_name = callback_data.get("prop_name")
@@ -312,13 +281,39 @@ async def choose_property_callback_handler(callback_query: CallbackQuery, callba
             pass
 
 
+async def properties_done_handler(message: types.Message):
+    chat_id = message.chat.id
+    tracked_properties = await storage.get_user_tracked_properties(chat_id)
+    from_user_id = message.from_user.id
+
+    sent_message_id = await storage.get_tracked_properties_message_id(chat_id)
+    if sent_message_id:
+        await bot.delete_message(chat_id, sent_message_id)
+        await storage.delete_tracked_properties_message_id(chat_id)
+
+    if not tracked_properties:
+        await bot.send_message(
+            chat_id,
+            "No properties have been selected. Please choose at least one property.",
+        )
+        await choose_properties_handler(message)
+    else:
+        await bot.send_message(
+            chat_id,
+            f"Selected properties: {', '.join(tracked_properties)}",
+            reply_markup=types.ReplyKeyboardRemove(),
+        )
+        is_in_setup = await storage.get_user_setup_status(chat_id)
+        if is_in_setup:
+            await storage.set_user_private_chat_id(from_user_id, chat_id)
+            await set_notification_handler(message)
+
+
 set_notification_callback_data = CallbackData("set_notification", "notification_type")
 async def set_notification_handler(message: types.Message):
     chat_id = message.chat.id
     bot_username = (await bot.me).username
     add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
-
-    print(f'FROM USER MEMBER: {message.from_user.id}')
 
     private_button = types.InlineKeyboardButton(
         "Stay here 👨‍💻",
@@ -348,8 +343,15 @@ async def set_notification_callback_handler(callback_query: CallbackQuery, callb
             chat_id,
             "Roger that! I will send you notifications in this chat 🤖",
         )
+        await bot.send_message(
+                chat_id,
+                "Congratulations! 🎉 Your setup process is complete. "
+                "You can now start tracking changes in your Notion workspace.",
+            )
+        await storage.set_user_setup_status(chat_id, False)
     else:
         await bot.send_message(chat_id, "Something went wrong, please try again 🥺")
+        await set_notification_handler(callback_query.message)
 
 async def on_chat_member_updated(message: types.Message):
     chat_id = message.chat.id
@@ -360,10 +362,17 @@ async def on_chat_member_updated(message: types.Message):
         await storage.set_user_notification_type(from_user_id, "group")
         await storage.set_user_notification_chat_id(from_user_id, chat_id)
 
+        user_private_chat_id = await storage.get_user_private_chat_id(from_user_id)
         await bot.send_message(
-            chat_id,
-            "Great! Notifications will be sent to this group chat. 🎉",
-        )
+                chat_id,
+                "Heey guys! I'm here to help you track changes in your Notion workspace 🤖",
+            )
+        await bot.send_message(
+                user_private_chat_id,
+                "Congratulations! 🎉 Your setup process is complete. "
+                "You can now start tracking changes in your Notion workspace.",
+            )
+        await storage.set_user_setup_status(from_user_id, False)
     else:
         return
 

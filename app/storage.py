@@ -118,3 +118,16 @@ async def get_user_notification_chat_id(user_id: int) -> Optional[int]:
     if chat_id:
         return int(chat_id.decode('utf-8'))
     return None
+
+
+async def set_user_private_chat_id(user_id: int, chat_id: str) -> None:
+    key = f"user:{user_id}:private_chat_id"
+    await redis.set(key, chat_id)
+
+
+async def get_user_private_chat_id(user_id: int) -> Optional[int]:
+    key = f"user:{user_id}:private_chat_id"
+    chat_id = await redis.get(key)
+    if chat_id:
+        return int(chat_id.decode('utf-8'))
+    return None
