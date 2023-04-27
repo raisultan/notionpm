@@ -84,21 +84,10 @@ async def skip_or_continue_setup(message: types.Message):
 
 
 async def send_welcome(message: types.Message):
-    chat_id = message.chat.id
-    from_user_id = message.from_user.id
-    bot_user = await bot.me
-
-    if message.new_chat_members[0].is_bot and message.new_chat_members[0].id == bot_user.id:
-        await storage.set_user_notification_type(from_user_id, "group")
-        await storage.set_user_notification_chat_id(from_user_id, chat_id)
-
-        # Send a message to the group chat to confirm that notifications will be sent there
-        await bot.send_message(
-            chat_id,
-            "This ain't start, I'm added to group chat",
-        )
-    else:
+    if message.chat.type == "private":
         await skip_or_continue_setup(message)
+    else:
+        pass
 
 
 async def send_login_url(message: types.Message):
@@ -347,7 +336,6 @@ async def set_notification_handler(message: types.Message):
         reply_markup=markup,
     )
 
-dp.register_message_handler(set_notification_handler, commands=["set_notification"])
 
 async def set_notification_callback_handler(callback_query: CallbackQuery, callback_data: dict):
     chat_id = callback_query.message.chat.id
@@ -363,10 +351,6 @@ async def set_notification_callback_handler(callback_query: CallbackQuery, callb
     else:
         await bot.send_message(chat_id, "Something went wrong, please try again 🥺")
 
-dp.register_callback_query_handler(
-    set_notification_callback_handler, set_notification_callback_data.filter()
-)
-
 async def on_chat_member_updated(message: types.Message):
     chat_id = message.chat.id
     from_user_id = message.from_user.id
@@ -376,7 +360,6 @@ async def on_chat_member_updated(message: types.Message):
         await storage.set_user_notification_type(from_user_id, "group")
         await storage.set_user_notification_chat_id(from_user_id, chat_id)
 
-        # Send a message to the group chat to confirm that notifications will be sent there
         await bot.send_message(
             chat_id,
             "Great! Notifications will be sent to this group chat. 🎉",
@@ -384,21 +367,47 @@ async def on_chat_member_updated(message: types.Message):
     else:
         return
 
-dp.register_message_handler(
-    on_chat_member_updated, content_types=[types.ContentType.NEW_CHAT_MEMBERS]
-)
 
-dp.register_message_handler(send_welcome, commands=["start"])
-dp.register_message_handler(send_login_url, commands=["login"])
-dp.register_message_handler(choose_database_handler, commands=["choose_database"])
-dp.register_callback_query_handler(
-    choose_db_callback_handler, choose_db_callback_data.filter()
+dp.register_message_handler(
+    send_welcome,
+    commands=["start"],
 )
-dp.register_message_handler(choose_properties_handler, commands=["choose_properties"])
-dp.register_callback_query_handler(
-    choose_property_callback_handler, choose_property_callback_data.filter()
+dp.register_message_handler(
+    send_login_url,
+    commands=["login"],
 )
-dp.register_message_handler(properties_done_handler, lambda message: message.text == 'Done selecting✅')
+dp.register_message_handler(
+    choose_database_handler,
+    commands=["choose_database"],
+)
+dp.register_callback_query_handler(
+    choose_db_callback_handler,
+    choose_db_callback_data.filter()
+)
+dp.register_message_handler(
+    choose_properties_handler,
+    commands=["choose_properties"],
+)
+dp.register_callback_query_handler(
+    choose_property_callback_handler,
+    choose_property_callback_data.filter(),
+)
+dp.register_message_handler(
+    properties_done_handler,
+    lambda message: message.text == 'Done selecting✅',
+)
+dp.register_message_handler(
+    set_notification_handler,
+    commands=["set_notification"],
+)
+dp.register_callback_query_handler(
+    set_notification_callback_handler,
+    set_notification_callback_data.filter(),
+)
+dp.register_message_handler(
+    on_chat_member_updated,
+    content_types=[types.ContentType.NEW_CHAT_MEMBERS],
+)
 
 
 async def main():
