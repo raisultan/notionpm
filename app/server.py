@@ -84,7 +84,21 @@ async def skip_or_continue_setup(message: types.Message):
 
 
 async def send_welcome(message: types.Message):
-    await skip_or_continue_setup(message)
+    chat_id = message.chat.id
+    from_user_id = message.from_user.id
+    bot_user = await bot.me
+
+    if message.new_chat_members[0].is_bot and message.new_chat_members[0].id == bot_user.id:
+        await storage.set_user_notification_type(from_user_id, "group")
+        await storage.set_user_notification_chat_id(from_user_id, chat_id)
+
+        # Send a message to the group chat to confirm that notifications will be sent there
+        await bot.send_message(
+            chat_id,
+            "This ain't start, I'm added to group chat",
+        )
+    else:
+        await skip_or_continue_setup(message)
 
 
 async def send_login_url(message: types.Message):
