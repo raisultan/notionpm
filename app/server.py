@@ -61,6 +61,7 @@ async def handle_oauth(request: Request):
         return web.Response(status=400)
 
 
+# TODO: refactor this please
 async def skip_or_continue_setup(message: types.Message):
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
@@ -84,22 +85,14 @@ async def skip_or_continue_setup(message: types.Message):
 
 
 async def send_welcome(message: types.Message):
-    if message.chat.type == "private":
-        await skip_or_continue_setup(message)
-    else:
-        pass
+    if message.chat.type != "private":
+        return
+    await skip_or_continue_setup(message)
 
 
 async def send_login_url(message: types.Message):
-    login_url = (
-        "https://api.notion.com/v1/oauth/authorize"
-        f"?client_id={NOTION_CLIENT_ID}"
-        f"&redirect_uri={NOTION_REDIRECT_URI}"
-        f"&response_type=code"
-        f"&state=instance-{message.chat.id}"
-    )
-
-    button = types.InlineKeyboardButton(text="Connect Notion📖", url=login_url)
+    connect_url = notion_oauth.generate_connect_url(message.chat.id)
+    button = types.InlineKeyboardButton(text="Connect Notion📖", url=connect_url)
     markup = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
     reply = f"Connect your Notion workspace"
 
@@ -117,6 +110,7 @@ async def choose_database_handler(message: types.Message):
     chat_id = message.chat.id
     access_token = await storage.get_user_access_token(chat_id)
 
+    # TODO: repeated code
     if not access_token:
         await bot.send_message(
             chat_id,
@@ -127,6 +121,7 @@ async def choose_database_handler(message: types.Message):
     user_notion = NotionCLI(auth=access_token)
     databases = list_databases(user_notion)
 
+    # TODO: repeated code
     if not databases:
         await bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
         return
@@ -192,6 +187,7 @@ async def choose_properties_handler(message: types.Message):
         await bot.delete_message(chat_id, sent_message_id)
         await storage.delete_tracked_properties_message_id(chat_id)
 
+    # TODO: repeated code
     if not access_token:
         await bot.send_message(
             chat_id,
@@ -199,9 +195,8 @@ async def choose_properties_handler(message: types.Message):
         )
         return
 
-    user_notion = NotionCLI(auth=access_token)
+    # TODO: repeated code
     db_id = await storage.get_user_db_id(chat_id)
-
     if not db_id:
         await bot.send_message(
             chat_id,
@@ -209,6 +204,7 @@ async def choose_properties_handler(message: types.Message):
         )
         return
 
+    user_notion = NotionCLI(auth=access_token)
     database = user_notion.databases.retrieve(db_id)
     supported_properties = {
         prop_name: prop

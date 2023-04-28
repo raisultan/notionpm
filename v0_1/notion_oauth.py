@@ -61,3 +61,12 @@ class NotionOAuth:
             print('Error while handling oauth:', repr(exc))
             chat_id = None
         return chat_id
+
+    def generate_connect_url(self, chat_id: str) -> str:
+        return (
+            "https://api.notion.com/v1/oauth/authorize"
+            f"?client_id={self.client_id}"
+            f"&redirect_uri={self.redirect_uri}"
+            f"&response_type=code"
+            f"&state=instance-{chat_id}"
+        )
