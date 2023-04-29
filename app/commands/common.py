@@ -5,8 +5,8 @@ import app.storage as storage
 
 async def skip_or_continue_setup(message: types.Message):
     from app.commands.connect_notion import send_login_url
-    from app.commands.choose_database import choose_database_handler
     from app.commands.choose_properties import choose_properties_handler
+    from app.dispatcher import choose_database
 
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
@@ -16,7 +16,7 @@ async def skip_or_continue_setup(message: types.Message):
 
     db_id = await storage.get_user_db_id(message.chat.id)
     if not db_id:
-        await choose_database_handler(message)
+        await choose_database.execute(message)
         await storage.set_user_setup_status(message.chat.id, True)
         return
 
