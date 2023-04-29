@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Final
 
 from aiogram import Bot
 from aiogram.types import (
@@ -12,7 +12,7 @@ from notion_client import Client as NotionCLI
 
 from app.commands.common import skip_or_continue_setup
 
-ChooseDatabaseCallback = CallbackData("choose_db", "db_id", "db_title")
+ChooseDatabaseCallback: Final[CallbackData] = CallbackData("choose_db", "db_id", "db_title")
 
 
 class ChooseDatabaseCommand:
