@@ -92,3 +92,42 @@ async def get_connect_message_id(chat_id: str) -> Optional[int]:
     if not message_id:
         return None
     return int(message_id.decode('utf-8'))
+
+
+async def set_user_notification_type(user_id: int, notification_type: str):
+    key = f"user:{user_id}:notification_type"
+    await redis.set(key, notification_type)
+
+
+async def set_user_notification_chat_id(user_id: int, chat_id: int):
+    key = f"user:{user_id}:notification_chat_id"
+    await redis.set(key, chat_id)
+
+
+async def get_user_notification_type(user_id: int) -> Optional[str]:
+    key = f"user:{user_id}:notification_type"
+    notification_type = await redis.get(key)
+    if notification_type:
+        return notification_type.decode('utf-8')
+    return None
+
+
+async def get_user_notification_chat_id(user_id: int) -> Optional[int]:
+    key = f"user:{user_id}:notification_chat_id"
+    chat_id = await redis.get(key)
+    if chat_id:
+        return int(chat_id.decode('utf-8'))
+    return None
+
+
+async def set_user_private_chat_id(user_id: int, chat_id: str) -> None:
+    key = f"user:{user_id}:private_chat_id"
+    await redis.set(key, chat_id)
+
+
+async def get_user_private_chat_id(user_id: int) -> Optional[int]:
+    key = f"user:{user_id}:private_chat_id"
+    chat_id = await redis.get(key)
+    if chat_id:
+        return int(chat_id.decode('utf-8'))
+    return None
