@@ -1,0 +1,29 @@
+from aiogram import types
+
+import app.storage as storage
+
+
+async def skip_or_continue_setup(message: types.Message):
+    from app.commands.connect_notion import send_login_url
+    from app.commands.choose_database import choose_database_handler
+    from app.commands.choose_properties import choose_properties_handler
+
+    access_token = await storage.get_user_access_token(message.chat.id)
+    if not access_token:
+        await send_login_url(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
+
+    db_id = await storage.get_user_db_id(message.chat.id)
+    if not db_id:
+        await choose_database_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
+
+    tracked_properties = await storage.get_user_tracked_properties(message.chat.id)
+    if not tracked_properties:
+        await choose_properties_handler(message)
+        await storage.set_user_setup_status(message.chat.id, True)
+        return
+
+    await storage.set_user_setup_status(message.chat.id, False)
