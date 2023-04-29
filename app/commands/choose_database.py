@@ -83,12 +83,13 @@ class ChooseDatabaseCommand:
             )
 
     async def handle_callback(self, query: CallbackQuery) -> None:
-        db_id = query.data.get("db_id")
         chat_id = query.message.chat.id
+        data = ChooseDatabaseCallback.parse(query.data)
+        db_id = data.get("db_id")
 
         await self._storage.set_user_db_id(chat_id, db_id)
         await self._bot.send_message(
             chat_id,
-            f"Default database has been set to {query.data.get('db_title')} 🎉",
+            f"Default database has been set to {data.get('db_title')} 🎉",
         )
         await skip_or_continue_setup(query.message)
