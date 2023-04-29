@@ -6,13 +6,13 @@ from typing import Any
 from html import escape
 
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
+from aiogram.types import ParseMode
 from dotenv import load_dotenv
 from notion_client import Client as NotionCLI
 from rocketry import Rocketry
 from rocketry.conds import every
 
-import app.storage as storage
+from app.dispatcher import storage
 
 load_dotenv()
 
