@@ -1,4 +1,7 @@
-from aiogram import Bot, Dispatcher, types
+from typing import Any, Awaitable, Optional
+
+from aiogram import Bot, ContentType, Dispatcher
+from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.middlewares import BaseMiddleware
 
 from app.initializer import bot
@@ -55,38 +58,85 @@ connect_notion = ConnectNotionCommand(
 
 
 class ForceUserSetupMiddleware(BaseMiddleware):
-    def __init__(self, bot: Bot):
+    def __init__(self, dp: Dispatcher, bot: Bot, storage: Any):
         super().__init__()
         self._bot = bot
+        self._dp = dp
+        self._storage = storage
 
-    async def on_pre_process_message(self, message: types.Message, data: dict):
+    async def on_pre_process_message(self, message: Message, data: dict):
+        if self.is_registered_command(message):
+            await self._storage.set_on_command(message.chat.id, message.text[1:])
+
         if (
             not await connect_notion.is_finished(message)
             and await connect_notion.is_applicable(message)
         ):
+            await self._bot.send_message(
+                message.chat.id,
+                "Oops, seems like you haven't setup me yet. Let's do that 😇"
+            )
             await connect_notion.execute(message)
         if (
             not await choose_database.is_finished(message)
             and await choose_database.is_applicable(message)
         ):
+            await self._bot.send_message(
+                message.chat.id,
+                "Oops, seems like you haven't setup me yet. Let's do that 😇"
+            )
             await choose_database.execute(message)
         if (
             not await choose_properties.is_finished(message)
             and await choose_properties.is_applicable(message)
         ):
+            await self._bot.send_message(
+                message.chat.id,
+                "Oops, seems like you haven't setup me yet. Let's do that 😇"
+            )
             await choose_properties.execute(message)
         if (
             not await setup_notifications.is_finished(message)
             and await setup_notifications.is_applicable(message)
         ):
+            await self._bot.send_message(
+                message.chat.id,
+                "Oops, seems like you haven't setup me yet. Let's do that 😇"
+            )
             await setup_notifications.execute(message)
+
+    async def on_post_process_callback_query(
+        self,
+        query: CallbackQuery,
+        result: Any,
+        data: dict,
+    ) -> None:
+        on_command = await self._storage.get_on_command(query.message.chat.id)
+        if on_command:
+            on_command_handler = self.get_command(on_command)
+            await on_command_handler(query.message)
+
+    def is_registered_command(self, message: Message) -> bool:
+        command_prefix = "/"
+        commands = [command.command for command in self.dp.message_handlers.commands]
+        return message.text.startswith(command_prefix) and message.text[1:] in commands
+
+    def get_command(self, command: str) -> Optional[Awaitable]:
+        for handler in self.dp.message_handlers.handlers:
+            if handler['spec'].command == command:
+                return handler['handler']
+        return None
+
+
+async def send_emojis_command(message: Message):
+    emojis = "😀 😃 😄 😁 😆"
+    await message.reply(emojis)
 
 
 def setup_dispatcher():
     dp = Dispatcher(bot)
 
-    dp.middleware.setup(ForceUserSetupMiddleware(bot))
-
+    dp.register_message_handler(send_emojis_command, commands=["emojis"])
     dp.register_message_handler(
         start.execute,
         commands=["start"],
@@ -125,7 +175,9 @@ def setup_dispatcher():
     )
     dp.register_message_handler(
         setup_notifications.handle_group_chat,
-        content_types=[types.ContentType.NEW_CHAT_MEMBERS],
+        content_types=[ContentType.NEW_CHAT_MEMBERS],
     )
+
+    dp.middleware.setup(ForceUserSetupMiddleware(dp, bot, storage))
 
     return dp
