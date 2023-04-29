@@ -2,7 +2,6 @@ import base64
 from typing import Any, Optional
 
 import aiohttp
-from aiohttp import web
 from aiohttp.web_request import Request
 from notion_client import Client as NotionCLI
 
