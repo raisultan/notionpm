@@ -4,12 +4,11 @@ import app.storage as storage
 
 
 async def skip_or_continue_setup(message: types.Message):
-    from app.commands.connect_notion import send_login_url
-    from app.dispatcher import choose_database, choose_properties
+    from app.dispatcher import choose_database, choose_properties, connect_notion
 
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
-        await send_login_url(message)
+        await connect_notion.execute(message)
         await storage.set_user_setup_status(message.chat.id, True)
         return
 
