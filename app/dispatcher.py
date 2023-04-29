@@ -3,6 +3,7 @@ from typing import Any, Awaitable, Optional
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, CallbackQuery, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
+from aiogram.dispatcher.filters.builtin import Command
 
 from app.initializer import bot
 
@@ -118,13 +119,18 @@ class ForceUserSetupMiddleware(BaseMiddleware):
 
     def is_registered_command(self, message: Message) -> bool:
         command_prefix = "/"
-        commands = [command.command for command in self._dp.message_handlers.commands]
+        commands = [
+            cmd
+            for handler in self._dp.message_handlers.handlers
+            if isinstance(handler.filter, Command)
+            for cmd in handler.filter.names
+        ]
         return message.text.startswith(command_prefix) and message.text[1:] in commands
 
     def get_command(self, command: str) -> Optional[Awaitable]:
         for handler in self._dp.message_handlers.handlers:
-            if handler['spec'].command == command:
-                return handler['handler']
+            if isinstance(handler.filter, Command) and command in handler.filter.names:
+                return handler.callback
         return None
 
 
