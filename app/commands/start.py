@@ -1,9 +1,10 @@
-from aiogram import types
+from aiogram.types import Message
 
 from app.commands.common import skip_or_continue_setup
 
 
-async def send_welcome(message: types.Message):
-    if message.chat.type != "private":
-        return
-    await skip_or_continue_setup(message)
+class StartCommand:
+    async def execute(message: Message) -> None:
+        if message.chat.type != "private":
+            return
+        await skip_or_continue_setup(message)
