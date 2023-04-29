@@ -24,6 +24,13 @@ class ChooseDatabaseCommand:
         self._notion = notion
         self._notion_cli = notion_cli
 
+    async def is_applicable(self, message: Message) -> bool:
+        access_token = await self._storage.get_user_access_token(message.chat.id)
+        return bool(access_token)
+
+    async def is_finished(self, message: Message) -> bool:
+        return bool(await self._storage.get_user_db_id(message.chat.id))
+
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
         access_token = await self._storage.get_user_access_token(chat_id)
