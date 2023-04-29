@@ -3,12 +3,12 @@ from aiogram import Dispatcher, types
 from app.initializer import bot
 
 from app.commands.start import send_welcome
-from app.commands.connect_notion import send_login_url
+from app.commands.connect_notion import ConnectNotionCommand
 from app.commands.choose_database import ChooseDatabaseCallback, ChooseDatabaseCommand
 from app.commands.choose_properties import ChoosePropertyCallback, ChoosePropertiesCommand
 from app.commands.set_notifications import set_notification_handler, set_notification_callback_handler, set_notification_callback_data, on_chat_member_updated
 
-from app.initializer import bot
+from app.initializer import bot, notion_oauth
 import app.storage as storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
@@ -24,6 +24,11 @@ choose_properties = ChoosePropertiesCommand(
     storage=storage,
     notion=NotionCLI,
 )
+connect_notion = ConnectNotionCommand(
+    bot=bot,
+    storage=storage,
+    notion_oauth=notion_oauth,
+)
 
 
 def setup_dispatcher():
@@ -34,7 +39,7 @@ def setup_dispatcher():
         commands=["start"],
     )
     dp.register_message_handler(
-        send_login_url,
+        connect_notion.execute,
         commands=["login"],
     )
     dp.register_message_handler(

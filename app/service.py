@@ -5,8 +5,7 @@ from aiohttp import web
 from app.notifications import app as notification_app
 
 from app.initializer import bot
-from app.commands.connect_notion import handle_oauth
-from app.dispatcher import setup_dispatcher
+from app.dispatcher import setup_dispatcher, connect_notion
 
 dp = setup_dispatcher()
 
@@ -14,7 +13,7 @@ dp = setup_dispatcher()
 async def main():
     global app
     app = web.Application()
-    app.add_routes([web.get("/oauth/callback", handle_oauth)])
+    app.add_routes([web.get("/oauth/callback", connect_notion.handle_oauth)])
 
     global runner
     runner = web.AppRunner(app)
