@@ -1,7 +1,5 @@
-from typing import Any, Awaitable, Optional
-
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, CallbackQuery, ContentType
+from aiogram.types import Message, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.dispatcher.filters.builtin import Command
 from aiogram.dispatcher.handler import CancelHandler
@@ -60,19 +58,11 @@ connect_notion = ConnectNotionCommand(
 
 
 class ForceUserSetupMiddleware(BaseMiddleware):
-    def __init__(self, dp: Dispatcher, bot: Bot, storage: Any):
+    def __init__(self, bot: Bot):
         super().__init__()
         self._bot = bot
-        self._dp = dp
-        self._storage = storage
 
     async def on_pre_process_message(self, message: Message, data: dict):
-        if self.is_registered_command(message):
-            print('\n\n\n')
-            print(f'registered command {message.text[1:]}')
-            print('\n\n\n')
-            await self._storage.set_on_command(message.chat.id, message.text[1:])
-
         if (
             not await connect_notion.is_finished(message)
             and await connect_notion.is_applicable(message)
@@ -113,33 +103,6 @@ class ForceUserSetupMiddleware(BaseMiddleware):
             )
             await setup_notifications.execute(message)
             raise CancelHandler()
-
-    async def on_post_process_callback_query(
-        self,
-        query: CallbackQuery,
-        result: Any,
-        data: dict,
-    ) -> None:
-        on_command = await self._storage.get_on_command(query.message.chat.id)
-        if on_command:
-            on_command_handler = self.get_command(on_command)
-            await on_command_handler(query.message)
-
-    def is_registered_command(self, message: Message) -> bool:
-        command_prefix = "/"
-        commands = [
-            cmd
-            for handler in self._dp.message_handlers.handlers
-            if isinstance(handler, Command)
-            for cmd in handler.names
-        ]
-        return message.text.startswith(command_prefix) and message.text[1:] in commands
-
-    def get_command(self, command: str) -> Optional[Awaitable]:
-        for handler in self._dp.message_handlers.handlers:
-            if isinstance(handler, Command) and command in handler.names:
-                return handler.callback
-        return None
 
 
 async def send_emojis_command(message: Message):
@@ -195,6 +158,6 @@ def setup_dispatcher():
         content_types=[ContentType.NEW_CHAT_MEMBERS],
     )
 
-    dp.middleware.setup(ForceUserSetupMiddleware(dp, bot, storage))
+    dp.middleware.setup(ForceUserSetupMiddleware(bot))
 
     return dp
