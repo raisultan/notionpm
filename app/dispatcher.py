@@ -68,6 +68,9 @@ class ForceUserSetupMiddleware(BaseMiddleware):
 
     async def on_pre_process_message(self, message: Message, data: dict):
         if self.is_registered_command(message):
+            print('\n\n\n')
+            print(f'registered command {message.text[1:]}')
+            print('\n\n\n')
             await self._storage.set_on_command(message.chat.id, message.text[1:])
 
         if (
@@ -118,14 +121,8 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         data: dict,
     ) -> None:
         on_command = await self._storage.get_on_command(query.message.chat.id)
-        print('\n\n\n')
-        print(f'On command: {on_command}')
-        print('\n\n\n')
         if on_command:
             on_command_handler = self.get_command(on_command)
-            print('\n\n\n')
-            print(f'On command handler: {on_command_handler}')
-            print('\n\n\n')
             await on_command_handler(query.message)
 
     def is_registered_command(self, message: Message) -> bool:
