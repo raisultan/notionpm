@@ -1,11 +1,9 @@
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
-from aiogram.dispatcher.filters.builtin import Command
 from aiogram.dispatcher.handler import CancelHandler
-from redis import asyncio as aioredis
 
-from app.initializer import bot
+from app.initializer import bot, storage
 
 from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
@@ -21,9 +19,6 @@ from app.storage import Storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
 from app.commands.continuous import ContinuousCommand
-
-redis = aioredis.from_url("redis://localhost")
-storage = Storage(redis)
 
 start = StartCommand(bot)
 choose_database = ChooseDatabaseCommand(
