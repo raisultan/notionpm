@@ -18,7 +18,7 @@ import app.storage as storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
 
-start = StartCommand()
+start = StartCommand(bot)
 choose_database = ChooseDatabaseCommand(
     bot=bot,
     storage=storage,
