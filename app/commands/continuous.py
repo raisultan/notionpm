@@ -19,7 +19,7 @@ class ContinuousCommand:
         is_finished = await self._finish(query)
         if (
             is_finished
-            and not await self._next.is_finished()
+            and not await self._next.is_finished(query.message)
             and await self._next.is_applicable()
         ):
             await self._next.execute(query.message)
