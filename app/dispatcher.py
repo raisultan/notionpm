@@ -5,7 +5,7 @@ from app.initializer import bot
 from app.commands.start import send_welcome
 from app.commands.connect_notion import send_login_url
 from app.commands.choose_database import ChooseDatabaseCallback, ChooseDatabaseCommand
-from app.commands.choose_properties import choose_properties_handler, choose_property_callback_handler, choose_property_callback_data, properties_done_handler
+from app.commands.choose_properties import ChoosePropertyCallback, ChoosePropertiesCommand
 from app.commands.set_notifications import set_notification_handler, set_notification_callback_handler, set_notification_callback_data, on_chat_member_updated
 
 from app.initializer import bot
@@ -18,6 +18,11 @@ choose_database = ChooseDatabaseCommand(
     storage=storage,
     notion=NotionCLI,
     notion_cli=notion_cli,
+)
+choose_properties = ChoosePropertiesCommand(
+    bot=bot,
+    storage=storage,
+    notion=NotionCLI,
 )
 
 
@@ -41,15 +46,15 @@ def setup_dispatcher():
         ChooseDatabaseCallback.filter()
     )
     dp.register_message_handler(
-        choose_properties_handler,
+        choose_properties.execute,
         commands=["choose_properties"],
     )
     dp.register_callback_query_handler(
-        choose_property_callback_handler,
-        choose_property_callback_data.filter(),
+        choose_properties.handle_callback,
+        ChoosePropertyCallback.filter(),
     )
     dp.register_message_handler(
-        properties_done_handler,
+        choose_properties.handle_finish,
         lambda message: message.text == 'Done selecting✅',
     )
     dp.register_message_handler(
