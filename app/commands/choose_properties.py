@@ -147,10 +147,6 @@ class ChoosePropertiesCommand:
                 "No properties have been selected. Please choose at least one property.",
             )
             await self.execute(message)
-            await self._bot.send_message(
-                chat_id,
-                "Aha, theory is true",
-            )
         else:
             await self._bot.send_message(
                 chat_id,
