@@ -24,7 +24,7 @@ class SetupNotificationsCommand:
     async def is_finished(self, message: Message) -> bool:
         user_id = message.from_user.id
         notification_type = await self._storage.get_user_notification_type(user_id)
-        chat_id = await self._storage_get_user_notification_chat_id(user_id)
+        chat_id = await self._storage.get_user_notification_chat_id(user_id)
         return notification_type and chat_id
 
     async def execute(self, message: Message) -> None:
