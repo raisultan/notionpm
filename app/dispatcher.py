@@ -1,7 +1,7 @@
 from typing import Any, Awaitable, Optional
 
-from aiogram import Bot, ContentType, Dispatcher
-from aiogram.types import Message, CallbackQuery
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message, CallbackQuery, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
 
 from app.initializer import bot
