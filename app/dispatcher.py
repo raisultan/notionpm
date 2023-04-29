@@ -118,11 +118,11 @@ class ForceUserSetupMiddleware(BaseMiddleware):
 
     def is_registered_command(self, message: Message) -> bool:
         command_prefix = "/"
-        commands = [command.command for command in self.dp.message_handlers.commands]
+        commands = [command.command for command in self._dp.message_handlers.commands]
         return message.text.startswith(command_prefix) and message.text[1:] in commands
 
     def get_command(self, command: str) -> Optional[Awaitable]:
-        for handler in self.dp.message_handlers.handlers:
+        for handler in self._dp.message_handlers.handlers:
             if handler['spec'].command == command:
                 return handler['handler']
         return None
