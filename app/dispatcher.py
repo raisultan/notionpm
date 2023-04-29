@@ -122,14 +122,14 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         commands = [
             cmd
             for handler in self._dp.message_handlers.handlers
-            if isinstance(handler.filter, Command)
-            for cmd in handler.filter.names
+            if isinstance(handler, Command)
+            for cmd in handler.names
         ]
         return message.text.startswith(command_prefix) and message.text[1:] in commands
 
     def get_command(self, command: str) -> Optional[Awaitable]:
         for handler in self._dp.message_handlers.handlers:
-            if isinstance(handler.filter, Command) and command in handler.filter.names:
+            if isinstance(handler, Command) and command in handler.names:
                 return handler.callback
         return None
 
