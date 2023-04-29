@@ -39,31 +39,16 @@ class ChoosePropertiesCommand:
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
-        access_token = await self._storage.get_user_access_token(chat_id)
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
         if sent_message_id:
             await self._bot.delete_message(chat_id, sent_message_id)
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
-        # TODO: repeated code
-        if not access_token:
-            await self._bot.send_message(
-                chat_id,
-                "You need to connect your Notion workspace first. Use the /login command to connect.",
-            )
-            return
-
-        # TODO: repeated code
+        access_token = await self._storage.get_user_access_token(chat_id)
         db_id = await self._storage.get_user_db_id(chat_id)
-        if not db_id:
-            await self._bot.send_message(
-                chat_id,
-                "You must choose a default database first. Use the /choose_database command.",
-            )
-            return
-
         user_notion = self._notion(auth=access_token)
+
         database = user_notion.databases.retrieve(db_id)
         supported_properties = {
             prop_name: prop
