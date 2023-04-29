@@ -1,5 +1,6 @@
-from typing import Final
+from typing import Any, Final
 
+from aiogram import Bot
 from aiogram import types
 from aiogram.utils import exceptions
 from aiogram.types import (
@@ -11,6 +12,7 @@ from aiogram.types import (
     Message,
 )
 from aiogram.utils.callback_data import CallbackData
+from notion_client import Client as NotionCLI
 
 from app.commands.set_notifications import set_notification_handler
 
@@ -26,11 +28,10 @@ class ChoosePropertiesCommand:
         'url',
     ]
 
-    def __init__(self, bot, storage, notion, notion_cli):
+    def __init__(self, bot: Bot, storage: Any, notion: NotionCLI):
         self._bot = bot
         self._storage = storage
         self._notion = notion
-        self._notion_cli = notion_cli
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
