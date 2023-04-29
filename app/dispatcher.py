@@ -3,6 +3,7 @@ from aiogram.types import Message, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.dispatcher.filters.builtin import Command
 from aiogram.dispatcher.handler import CancelHandler
+from redis import asyncio as aioredis
 
 from app.initializer import bot
 
@@ -15,12 +16,14 @@ from app.commands.choose_properties import (
     DonePropertySelectingCallback,
 )
 from app.commands.set_notifications import SetupNotificationsCallback, SetupNotificationsCommand
-
 from app.initializer import bot, notion_oauth
-import app.storage as storage
+from app.storage import Storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
 from app.commands.continuous import ContinuousCommand
+
+redis = aioredis.from_url("redis://localhost")
+storage = Storage(redis)
 
 start = StartCommand(bot)
 choose_database = ChooseDatabaseCommand(

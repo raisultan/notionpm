@@ -9,11 +9,13 @@ from aiogram.types import (
 )
 from aiogram.utils.callback_data import CallbackData
 
+from app.storage import Storage
+
 SetupNotificationsCallback: Final[CallbackData] = CallbackData("set_notification", "notification_type")
 
 
 class SetupNotificationsCommand:
-    def __init__(self, bot: Bot, storage: Any):
+    def __init__(self, bot: Bot, storage: Storage):
         self._bot = bot
         self._storage = storage
 
