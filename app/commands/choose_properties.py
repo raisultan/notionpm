@@ -14,8 +14,6 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
-from app.commands.set_notifications import set_notification_handler
-
 ChoosePropertyCallback: Final[CallbackData] = CallbackData("choose_property", "prop_name")
 
 
@@ -132,6 +130,8 @@ class ChoosePropertiesCommand:
                 pass
 
     async def handle_finish(self, message: Message) -> None:
+        from app.dispatcher import setup_notifications
+
         chat_id = message.chat.id
         tracked_properties = await self._storage.get_user_tracked_properties(chat_id)
         from_user_id = message.from_user.id
@@ -156,4 +156,4 @@ class ChoosePropertiesCommand:
             is_in_setup = await self._storage.get_user_setup_status(chat_id)
             if is_in_setup:
                 await self._storage.set_user_private_chat_id(from_user_id, chat_id)
-                await set_notification_handler(message)
+                await setup_notifications.execute(message)

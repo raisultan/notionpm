@@ -6,7 +6,7 @@ from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
 from app.commands.choose_database import ChooseDatabaseCallback, ChooseDatabaseCommand
 from app.commands.choose_properties import ChoosePropertyCallback, ChoosePropertiesCommand
-from app.commands.set_notifications import set_notification_handler, set_notification_callback_handler, set_notification_callback_data, on_chat_member_updated
+from app.commands.set_notifications import SetupNotificationsCallback, SetupNotificationsCommand
 
 from app.initializer import bot, notion_oauth
 import app.storage as storage
@@ -30,6 +30,10 @@ connect_notion = ConnectNotionCommand(
     notion_oauth=notion_oauth,
 )
 start = StartCommand()
+setup_notifications = SetupNotificationsCommand(
+    bot=bot,
+    storage=storage,
+)
 
 
 def setup_dispatcher():
@@ -64,15 +68,15 @@ def setup_dispatcher():
         lambda message: message.text == 'Done selecting✅',
     )
     dp.register_message_handler(
-        set_notification_handler,
+        setup_notifications.execute,
         commands=["set_notification"],
     )
     dp.register_callback_query_handler(
-        set_notification_callback_handler,
-        set_notification_callback_data.filter(),
+        setup_notifications.handle_private_messages,
+        SetupNotificationsCallback.filter(),
     )
     dp.register_message_handler(
-        on_chat_member_updated,
+        setup_notifications.handle_group_chat,
         content_types=[types.ContentType.NEW_CHAT_MEMBERS],
     )
 
