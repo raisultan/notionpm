@@ -5,8 +5,7 @@ import app.storage as storage
 
 async def skip_or_continue_setup(message: types.Message):
     from app.commands.connect_notion import send_login_url
-    from app.commands.choose_properties import choose_properties_handler
-    from app.dispatcher import choose_database
+    from app.dispatcher import choose_database, choose_properties
 
     access_token = await storage.get_user_access_token(message.chat.id)
     if not access_token:
@@ -22,7 +21,7 @@ async def skip_or_continue_setup(message: types.Message):
 
     tracked_properties = await storage.get_user_tracked_properties(message.chat.id)
     if not tracked_properties:
-        await choose_properties_handler(message)
+        await choose_properties.execute(message)
         await storage.set_user_setup_status(message.chat.id, True)
         return
 
