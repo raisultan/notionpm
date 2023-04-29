@@ -138,7 +138,7 @@ async def set_on_command(chat_id: str, command: str) -> None:
     await redis.set(key, command)
 
 
-async def get_on_command(chat_id: str, command: str) -> None:
+async def get_on_command(chat_id: str) -> None:
     key = f"on_command_{chat_id}"
     command = await redis.get(key)
     if command:
