@@ -69,6 +69,28 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         ):
             await setup_notifications.execute(message)
 
+    async def on_post_process_message(self, message, result, data):
+        if (
+            not await connect_notion.is_finished(message)
+            and await connect_notion.is_applicable(message)
+        ):
+            await connect_notion.execute(message)
+        if (
+            not await choose_database.is_finished(message)
+            and await choose_database.is_applicable(message)
+        ):
+            await choose_database.execute(message)
+        if (
+            not await choose_properties.is_finished(message)
+            and await choose_properties.is_applicable(message)
+        ):
+            await choose_properties.execute(message)
+        if (
+            not await setup_notifications.is_finished(message)
+            and await setup_notifications.is_applicable(message)
+        ):
+            await setup_notifications.execute(message)
+
 
 def setup_dispatcher():
     dp = Dispatcher(bot)
