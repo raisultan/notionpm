@@ -2,7 +2,7 @@ from aiogram import Dispatcher, types
 
 from app.initializer import bot
 
-from app.commands.start import send_welcome
+from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
 from app.commands.choose_database import ChooseDatabaseCallback, ChooseDatabaseCommand
 from app.commands.choose_properties import ChoosePropertyCallback, ChoosePropertiesCommand
@@ -29,13 +29,14 @@ connect_notion = ConnectNotionCommand(
     storage=storage,
     notion_oauth=notion_oauth,
 )
+start = StartCommand()
 
 
 def setup_dispatcher():
     dp = Dispatcher(bot)
 
     dp.register_message_handler(
-        send_welcome,
+        start.execute,
         commands=["start"],
     )
     dp.register_message_handler(
