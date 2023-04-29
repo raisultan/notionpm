@@ -17,6 +17,16 @@ class SetupNotificationsCommand:
         self._bot = bot
         self._storage = storage
 
+    async def is_applicable(self, message: Message) -> bool:
+        tracked_properties = await self._storage.get_user_tracked_properties(message.chat.id)
+        return bool(tracked_properties)
+
+    async def is_finished(self, message: Message) -> bool:
+        user_id = message.from_user.id
+        notification_type = await self._storage.get_user_notification_type(user_id)
+        chat_id = await self._storage_get_user_notification_chat_id(user_id)
+        return notification_type and chat_id
+
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
         bot_username = (await self._bot.me).username
@@ -81,4 +91,4 @@ class SetupNotificationsCommand:
                 )
             await self._storage.set_user_setup_status(from_user_id, False)
         else:
-            return
+            return None

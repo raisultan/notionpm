@@ -22,6 +22,12 @@ class ConnectNotionCommand:
         self._storage = storage
         self._notion_oauth = notion_oauth
 
+    async def is_applicable(self, message: Message) -> bool:
+        return True
+
+    async def is_finished(self, message: Message) -> bool:
+        return bool(await self._storage.get_user_access_token(message.chat.id))
+
     async def execute(self, message: Message) -> None:
         connect_url = self._notion_oauth.generate_connect_url(message.chat.id)
         button = InlineKeyboardButton(text="Connect Notion📖", url=connect_url)
