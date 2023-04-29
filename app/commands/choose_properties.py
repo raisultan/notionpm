@@ -7,14 +7,13 @@ from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    KeyboardButton,
-    ReplyKeyboardMarkup,
     Message,
 )
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
 ChoosePropertyCallback: Final[CallbackData] = CallbackData("choose_property", "prop_name")
+DonePropertySelectingCallback: Final[CallbackData] = CallbackData("done_property_selecting")
 
 
 class ChoosePropertiesCommand:
@@ -30,6 +29,13 @@ class ChoosePropertiesCommand:
         self._bot = bot
         self._storage = storage
         self._notion = notion
+
+    async def is_applicable(self, message: Message) -> bool:
+        db_id = await self._storage.get_user_db_id(message.chat.id)
+        return bool(db_id)
+
+    async def is_finished(self, message: Message) -> bool:
+        return bool(await self._storage.get_tracked_properties(message.chat.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
@@ -73,11 +79,13 @@ class ChoosePropertiesCommand:
             )
             property_buttons.append([button])
 
-        markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
+        done_button = InlineKeyboardButton(
+            "Done selecting✅",
+            callback_data=DonePropertySelectingCallback.new(),
+        )
+        property_buttons.append([done_button])
 
-        done_button = KeyboardButton("Done selecting✅")
-        done_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        done_markup.add(done_button)
+        markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
 
         await self._bot.send_message(
             chat_id,
@@ -88,7 +96,6 @@ class ChoosePropertiesCommand:
         await self._bot.send_message(
             chat_id,
             "Press 'Done selecting✅' when you're finished selecting properties🤖",
-            reply_markup=done_markup,
         )
 
     async def handle_callback(self, query: CallbackQuery) -> None:
