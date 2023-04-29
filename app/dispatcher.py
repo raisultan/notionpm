@@ -17,6 +17,7 @@ from app.initializer import bot, notion_oauth
 import app.storage as storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
+from app.commands.continuous import ContinuousCommand
 
 start = StartCommand(bot)
 choose_database = ChooseDatabaseCommand(
@@ -24,12 +25,6 @@ choose_database = ChooseDatabaseCommand(
     storage=storage,
     notion=NotionCLI,
     notion_cli=notion_cli,
-)
-connect_notion = ConnectNotionCommand(
-    bot=bot,
-    storage=storage,
-    notion_oauth=notion_oauth,
-    next=choose_database,
 )
 choose_properties = ChoosePropertiesCommand(
     bot=bot,
@@ -41,6 +36,23 @@ setup_notifications = SetupNotificationsCommand(
     storage=storage,
 )
 
+continuous_choose_database = ContinuousCommand(
+    command=choose_database,
+    finish=choose_database.handle_callback,
+    next=choose_properties,
+)
+continuous_choose_properties = ContinuousCommand(
+    command=choose_properties,
+    finish=choose_properties.handle_finish,
+    next=setup_notifications,
+)
+connect_notion = ConnectNotionCommand(
+    bot=bot,
+    storage=storage,
+    notion_oauth=notion_oauth,
+    next=choose_database,
+)
+
 
 class ForceUserSetupMiddleware(BaseMiddleware):
     def __init__(self, bot: Bot):
@@ -48,28 +60,6 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         self._bot = bot
 
     async def on_pre_process_message(self, message: types.Message, data: dict):
-        if (
-            not await connect_notion.is_finished(message)
-            and await connect_notion.is_applicable(message)
-        ):
-            await connect_notion.execute(message)
-        if (
-            not await choose_database.is_finished(message)
-            and await choose_database.is_applicable(message)
-        ):
-            await choose_database.execute(message)
-        if (
-            not await choose_properties.is_finished(message)
-            and await choose_properties.is_applicable(message)
-        ):
-            await choose_properties.execute(message)
-        if (
-            not await setup_notifications.is_finished(message)
-            and await setup_notifications.is_applicable(message)
-        ):
-            await setup_notifications.execute(message)
-
-    async def on_post_process_message(self, message, result, data):
         if (
             not await connect_notion.is_finished(message)
             and await connect_notion.is_applicable(message)
@@ -106,23 +96,23 @@ def setup_dispatcher():
         commands=["login"],
     )
     dp.register_message_handler(
-        choose_database.execute,
+        continuous_choose_database.command.execute,
         commands=["choose_database"],
     )
     dp.register_callback_query_handler(
-        choose_database.handle_callback,
+        continuous_choose_database.finish,
         ChooseDatabaseCallback.filter()
     )
     dp.register_message_handler(
-        choose_properties.execute,
+        continuous_choose_properties.command.execute,
         commands=["choose_properties"],
     )
     dp.register_callback_query_handler(
-        choose_properties.handle_callback,
+        continuous_choose_properties.command.handle_callback,
         ChoosePropertyCallback.filter(),
     )
     dp.register_callback_query_handler(
-        choose_properties.handle_finish,
+        continuous_choose_properties.finish,
         DonePropertySelectingCallback.filter(),
     )
     dp.register_message_handler(

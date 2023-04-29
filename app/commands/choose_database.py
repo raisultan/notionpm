@@ -80,7 +80,7 @@ class ChooseDatabaseCommand:
                 reply_markup=markup,
             )
 
-    async def handle_callback(self, query: CallbackQuery) -> None:
+    async def handle_callback(self, query: CallbackQuery) -> bool:
         chat_id = query.message.chat.id
         data = ChooseDatabaseCallback.parse(query.data)
         db_id = data.get("db_id")
@@ -90,3 +90,4 @@ class ChooseDatabaseCommand:
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
+        return True

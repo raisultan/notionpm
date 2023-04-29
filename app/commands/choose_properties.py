@@ -121,7 +121,7 @@ class ChoosePropertiesCommand:
             except exceptions.MessageNotModified:
                 pass
 
-    async def handle_finish(self, query: CallbackQuery) -> None:
+    async def handle_finish(self, query: CallbackQuery) -> bool:
         from app.dispatcher import setup_notifications
 
         chat_id = query.message.chat.id
@@ -139,6 +139,7 @@ class ChoosePropertiesCommand:
                 "No properties have been selected. Please choose at least one property.",
             )
             await self.execute(query.message)
+            return False
         else:
             await self._bot.send_message(
                 chat_id,
@@ -149,3 +150,4 @@ class ChoosePropertiesCommand:
             if is_in_setup:
                 await self._storage.set_user_private_chat_id(from_user_id, chat_id)
                 await setup_notifications.execute(query.message)
+            return True
