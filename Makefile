@@ -10,7 +10,7 @@ restart-redis:
 
 start-app:
 	@echo "Starting app..."
-	python3 -m app.server
+	python3 -m app.service
 
 restart-all:
 	@echo "Stopping Redis..."
@@ -23,4 +23,4 @@ restart-all:
 	docker run --name notionpm-redis -d -p 6379:6379 redis
 
 	@echo "Starting app..."
-	python3 -m app.server
+	python3 -m app.service
