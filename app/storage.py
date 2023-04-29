@@ -131,3 +131,16 @@ async def get_user_private_chat_id(user_id: int) -> Optional[int]:
     if chat_id:
         return int(chat_id.decode('utf-8'))
     return None
+
+
+async def set_on_command(chat_id: str, command: str) -> None:
+    key = f"on_command_{chat_id}"
+    await redis.set(key, command)
+
+
+async def get_on_command(chat_id: str, command: str) -> None:
+    key = f"on_command_{chat_id}"
+    command = await redis.get(key)
+    if command:
+        return command.decode('utf-8')
+    return None
