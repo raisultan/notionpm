@@ -10,13 +10,15 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
+from app.storage import Storage
+
 ChooseDatabaseCallback: Final[CallbackData] = CallbackData("choose_db", "db_id", "db_title")
 
 
 class ChooseDatabaseCommand:
     """Command to choose a database to track."""
 
-    def __init__(self, bot: Bot, storage: Any, notion: NotionCLI, notion_cli: Any):
+    def __init__(self, bot: Bot, storage: Storage, notion: NotionCLI, notion_cli: Any):
         self._bot = bot
         self._storage = storage
         self._notion = notion

@@ -13,10 +13,11 @@ from aiohttp.web_request import Request
 
 from app.initializer import BOT_URL
 from v0_1.notion_oauth import NotionOAuth
+from app.storage import Storage
 
 
 class ConnectNotionCommand:
-    def __init__(self, bot: Bot, storage: Any, notion_oauth: NotionOAuth, next: Any):
+    def __init__(self, bot: Bot, storage: Storage, notion_oauth: NotionOAuth, next: Any):
         self._bot = bot
         self._storage = storage
         self._notion_oauth = notion_oauth

@@ -12,6 +12,8 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
+from app.storage import Storage
+
 ChoosePropertyCallback: Final[CallbackData] = CallbackData("choose_property", "prop_name")
 DonePropertySelectingCallback: Final[CallbackData] = CallbackData("done_property_selecting")
 
@@ -25,7 +27,7 @@ class ChoosePropertiesCommand:
         'url',
     ]
 
-    def __init__(self, bot: Bot, storage: Any, notion: NotionCLI):
+    def __init__(self, bot: Bot, storage: Storage, notion: NotionCLI):
         self._bot = bot
         self._storage = storage
         self._notion = notion
