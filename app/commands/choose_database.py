@@ -10,8 +10,6 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
-from app.commands.common import skip_or_continue_setup
-
 ChooseDatabaseCallback: Final[CallbackData] = CallbackData("choose_db", "db_id", "db_title")
 
 
@@ -56,8 +54,7 @@ class ChooseDatabaseCommand:
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
             )
-            await skip_or_continue_setup(message)
-            return
+            return None
 
         inline_keyboard = []
 
@@ -93,4 +90,3 @@ class ChooseDatabaseCommand:
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
-        await skip_or_continue_setup(query.message)

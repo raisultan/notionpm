@@ -11,16 +11,16 @@ from aiogram.types import (
 from aiohttp import web
 from aiohttp.web_request import Request
 
-from app.commands.common import skip_or_continue_setup
 from app.initializer import BOT_URL
 from v0_1.notion_oauth import NotionOAuth
 
 
 class ConnectNotionCommand:
-    def __init__(self, bot: Bot, storage: Any, notion_oauth: NotionOAuth):
+    def __init__(self, bot: Bot, storage: Any, notion_oauth: NotionOAuth, next: Any):
         self._bot = bot
         self._storage = storage
         self._notion_oauth = notion_oauth
+        self._next = next
 
     async def is_applicable(self, message: Message) -> bool:
         return True
@@ -46,7 +46,7 @@ class ConnectNotionCommand:
         chat_id = await self._notion_oauth.handle_oauth(request)
         if chat_id:
             message = Message(chat=Chat(id=int(chat_id), type='private'))
-            await skip_or_continue_setup(message)
+            await self._next.execute(message)
             return web.HTTPFound(BOT_URL)
         else:
             return web.Response(status=400)

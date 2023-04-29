@@ -19,16 +19,17 @@ from notion_client import Client as NotionCLI
 import app.notion as notion_cli
 
 start = StartCommand()
-connect_notion = ConnectNotionCommand(
-    bot=bot,
-    storage=storage,
-    notion_oauth=notion_oauth,
-)
 choose_database = ChooseDatabaseCommand(
     bot=bot,
     storage=storage,
     notion=NotionCLI,
     notion_cli=notion_cli,
+)
+connect_notion = ConnectNotionCommand(
+    bot=bot,
+    storage=storage,
+    notion_oauth=notion_oauth,
+    next=choose_database,
 )
 choose_properties = ChoosePropertiesCommand(
     bot=bot,
