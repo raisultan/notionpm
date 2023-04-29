@@ -2,9 +2,10 @@ import os
 
 from aiogram import Bot
 from dotenv import load_dotenv
+from redis import asyncio as aioredis
 
-import app.storage as storage
 from v0_1.notion_oauth import NotionOAuth
+from app.storage import Storage
 
 load_dotenv()
 
@@ -15,6 +16,9 @@ NOTION_REDIRECT_URI = os.environ["NOTION_REDIRECT_URI"]
 BOT_URL = os.environ["BOT_URL"]
 
 bot = Bot(token=os.environ["BOT_TOKEN"])
+
+redis = aioredis.from_url("redis://localhost")
+storage = Storage(redis)
 
 notion_oauth = NotionOAuth(
     storage=storage,
