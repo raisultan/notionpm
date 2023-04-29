@@ -35,7 +35,7 @@ class ChoosePropertiesCommand:
         return bool(db_id)
 
     async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_tracked_properties(message.chat.id))
+        return bool(await self._storage.get_user_tracked_properties(message.chat.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
