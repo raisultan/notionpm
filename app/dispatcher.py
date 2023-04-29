@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message, CallbackQuery, ContentType
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.dispatcher.filters.builtin import Command
+from aiogram.dispatcher.handler import CancelHandler
 
 from app.initializer import bot
 
@@ -78,6 +79,7 @@ class ForceUserSetupMiddleware(BaseMiddleware):
                 "Oops, seems like you haven't setup me yet. Let's do that 😇"
             )
             await connect_notion.execute(message)
+            raise CancelHandler()
         if (
             not await choose_database.is_finished(message)
             and await choose_database.is_applicable(message)
@@ -87,6 +89,7 @@ class ForceUserSetupMiddleware(BaseMiddleware):
                 "Oops, seems like you haven't setup me yet. Let's do that 😇"
             )
             await choose_database.execute(message)
+            raise CancelHandler()
         if (
             not await choose_properties.is_finished(message)
             and await choose_properties.is_applicable(message)
@@ -96,6 +99,7 @@ class ForceUserSetupMiddleware(BaseMiddleware):
                 "Oops, seems like you haven't setup me yet. Let's do that 😇"
             )
             await choose_properties.execute(message)
+            raise CancelHandler()
         if (
             not await setup_notifications.is_finished(message)
             and await setup_notifications.is_applicable(message)
@@ -105,6 +109,7 @@ class ForceUserSetupMiddleware(BaseMiddleware):
                 "Oops, seems like you haven't setup me yet. Let's do that 😇"
             )
             await setup_notifications.execute(message)
+            raise CancelHandler()
 
     async def on_post_process_callback_query(
         self,
@@ -113,8 +118,14 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         data: dict,
     ) -> None:
         on_command = await self._storage.get_on_command(query.message.chat.id)
+        print('\n\n\n')
+        print(f'On command: {on_command}')
+        print('\n\n\n')
         if on_command:
             on_command_handler = self.get_command(on_command)
+            print('\n\n\n')
+            print(f'On command handler: {on_command_handler}')
+            print('\n\n\n')
             await on_command_handler(query.message)
 
     def is_registered_command(self, message: Message) -> bool:
@@ -136,7 +147,10 @@ class ForceUserSetupMiddleware(BaseMiddleware):
 
 async def send_emojis_command(message: Message):
     emojis = "😀 😃 😄 😁 😆"
-    await message.reply(emojis)
+    await bot.send_message(
+        message.chat.id,
+        emojis,
+    )
 
 
 def setup_dispatcher():
