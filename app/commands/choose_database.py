@@ -34,22 +34,16 @@ class ChooseDatabaseCommand:
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
         access_token = await self._storage.get_user_access_token(chat_id)
-
-        # TODO: repeated code
-        if not access_token:
-            await self._bot.send_message(
-                chat_id,
-                "You need to connect your Notion workspace first. Use the /login command to connect.",
-            )
-            return
-
         user_notion = self._notion(auth=access_token)
         databases = self._notion_cli.list_databases(user_notion)
 
-        # TODO: repeated code
         if not databases:
-            await self._bot.send_message(message.chat.id, "No databases found in your Notion workspace.")
-            return
+            await self._bot.send_message(
+                chat_id,
+                "No databases found in your Notion workspace, please choose valid database 📄",
+            )
+            await self.execute(message)
+            return None
 
         connect_message_id = await self._storage.get_connect_message_id(message.chat.id)
         if connect_message_id:
