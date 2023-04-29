@@ -43,6 +43,7 @@ setup_notifications = SetupNotificationsCommand(
 
 class ForceUserSetupMiddleware(BaseMiddleware):
     def __init__(self, bot: Bot):
+        super().__init__()
         self._bot = bot
 
     async def on_pre_process_message(self, message: types.Message, data: dict):
