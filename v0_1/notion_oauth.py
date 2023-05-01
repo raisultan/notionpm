@@ -3,7 +3,8 @@ from typing import Any, Optional
 
 import aiohttp
 from aiohttp.web_request import Request
-from notion_client import Client as NotionCLI
+
+from app.notion import NotionClient
 
 
 class NotionOAuth:
@@ -54,7 +55,7 @@ class NotionOAuth:
             response = await self.make_oauth_request(code)
             access_token = response["access_token"]
 
-            NotionCLI(auth=access_token).search()
+            NotionClient(auth=access_token).search()
             await self.storage.save_user_access_token(chat_id, access_token)
         except Exception as exc:
             print('Error while handling oauth:', repr(exc))

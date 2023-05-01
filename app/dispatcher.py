@@ -19,9 +19,8 @@ from app.commands.set_notifications import (
     SetupNotificationsCommand,
 )
 from app.initializer import bot, notion_oauth
-from notion_client import Client as NotionCLI
 from app.middleware import ForceUserSetupMiddleware
-import app.notion as notion_cli
+from app.notion import NotionClient
 
 setup_notifications = SetupNotificationsCommand(
     bot=bot,
@@ -32,14 +31,13 @@ choose_properties = ChoosePropertiesCommand(
     bot=bot,
     next=setup_notifications,
     storage=storage,
-    notion=NotionCLI,
+    notion=NotionClient,
 )
 choose_database = ChooseDatabaseCommand(
     bot=bot,
     next=choose_properties,
     storage=storage,
-    notion=NotionCLI,
-    notion_cli=notion_cli,
+    notion=NotionClient,
 )
 connect_notion = ConnectNotionCommand(
     bot=bot,

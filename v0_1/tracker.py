@@ -8,11 +8,11 @@ from html import escape
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from dotenv import load_dotenv
-from notion_client import Client as NotionCLI
 from rocketry import Rocketry
 from rocketry.conds import every
 
 import app.storage as storage
+from app.notion import NotionClient
 
 load_dotenv()
 
@@ -194,7 +194,7 @@ async def track_changes_for_all():
             continue
 
         try:
-            notion = NotionCLI(auth=access_token)
+            notion = NotionClient(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)
             await storage.set_user_db_state(db_id, new_db_state)

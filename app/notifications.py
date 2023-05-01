@@ -8,15 +8,14 @@ from html import escape
 from aiogram import Bot
 from aiogram.types import ParseMode
 from dotenv import load_dotenv
-from notion_client import Client as NotionCLI
 from rocketry import Rocketry
 from rocketry.conds import every
 
 from app.dispatcher import storage
+from app.notion import NotionClient
 
 load_dotenv()
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -172,7 +171,7 @@ async def track_changes_for_all():
             continue
 
         try:
-            notion = NotionCLI(auth=access_token)
+            notion = NotionClient(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)
             changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
