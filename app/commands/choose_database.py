@@ -8,10 +8,10 @@ from aiogram.types import (
     Message,
 )
 from aiogram.utils.callback_data import CallbackData
-from notion_client import Client as NotionCLI
 
 from app.commands.abstract import AbstractCommand
 from app.storage import Storage
+from app.notion import NotionClient
 
 ChooseDatabaseCallback: Final[CallbackData] = CallbackData("choose_db", "db_id", "db_title")
 
@@ -24,13 +24,11 @@ class ChooseDatabaseCommand(AbstractCommand):
         bot: Bot,
         next: AbstractCommand,
         storage: Storage,
-        notion: NotionCLI,
-        notion_cli: Any,
+        notion: NotionClient,
     ):
         super().__init__(bot, next)
         self._storage = storage
         self._notion = notion
-        self._notion_cli = notion_cli
 
     async def is_applicable(self, message: Message) -> bool:
         access_token = await self._storage.get_user_access_token(message.chat.id)
@@ -43,7 +41,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         chat_id = message.chat.id
         access_token = await self._storage.get_user_access_token(chat_id)
         user_notion = self._notion(auth=access_token)
-        databases = self._notion_cli.list_databases(user_notion)
+        databases = user_notion.list_databases()
 
         if not databases:
             await self._bot.send_message(

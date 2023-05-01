@@ -10,10 +10,10 @@ from aiogram.types import (
     Message,
 )
 from aiogram.utils.callback_data import CallbackData
-from notion_client import Client as NotionCLI
 
 from app.commands.abstract import AbstractCommand
 from app.storage import Storage
+from app.notion import NotionClient
 
 ChoosePropertyCallback: Final[CallbackData] = CallbackData("choose_property", "prop_name")
 DonePropertySelectingCallback: Final[CallbackData] = CallbackData("done_property_selecting")
@@ -33,7 +33,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         bot: Bot,
         next: Optional[AbstractCommand],
         storage: Storage,
-        notion: NotionCLI,
+        notion: NotionClient,
     ):
         super().__init__(bot, next)
         self._storage = storage
