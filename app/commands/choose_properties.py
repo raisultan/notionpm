@@ -98,7 +98,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         chat_id = query.message.chat.id
         data = ChoosePropertyCallback.parse(query.data)
         prop_name = data.get("prop_name")
-        tracked_properties = await self._storage.get_user_tracked_properties(query.from_user.id)
+        tracked_properties = await self._storage.get_user_tracked_properties(query.message.from_user.id)
 
         if not tracked_properties:
             tracked_properties = []
@@ -108,7 +108,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         else:
             tracked_properties.remove(prop_name)
 
-        await self._storage.set_user_tracked_properties(query.from_user.id, tracked_properties)
+        await self._storage.set_user_tracked_properties(query.message.from_user.id, tracked_properties)
 
         if tracked_properties:
             new_text = f"Current tracked properties: {', '.join(tracked_properties)}"
@@ -134,8 +134,8 @@ class ChoosePropertiesCommand(AbstractCommand):
 
     async def handle_finish(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
-        tracked_properties = await self._storage.get_user_tracked_properties(query.from_user.id)
-        from_user_id = query.from_user.id
+        tracked_properties = await self._storage.get_user_tracked_properties(query.message.from_user.id)
+        from_user_id = query.message.from_user.id
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
         if sent_message_id:
