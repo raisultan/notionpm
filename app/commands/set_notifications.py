@@ -58,7 +58,7 @@ class SetupNotificationsCommand(AbstractCommand):
 
         if notification_type == "private":
             await self._storage.set_user_notification_type(chat_id, "private")
-            await self._storage.set_user_notification_chat_id(query.message.from_user.id, chat_id)
+            await self._storage.set_user_notification_chat_id(query.from_user.id, chat_id)
             await self._bot.send_message(
                 chat_id,
                 "Roger that! I will send you notifications in this chat 🤖",
