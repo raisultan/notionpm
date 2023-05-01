@@ -55,15 +55,20 @@ class ConnectNotionCommand(AbstractCommand):
     async def handle_oauth(self, request: Request):
         user_id = await self._notion_oauth.handle_oauth(request)
         if user_id:
-            from_user = User(id=user_id, is_bot=False, first_name='dummy', username='dummy')
+            chat = Chat(id='some_id', type='private')
+            user = User(id=user_id, is_bot=False, first_name='dummy', username='dummy')
+
+            message_data = {
+                'chat': chat.to_python(),
+                'from': user.to_python(),
+                'message_id': 0,
+            }
+
             query = CallbackQuery(
                 id='dummy_id',
-                from_user=from_user,
+                from_user=user,
                 chat_instance=None,
-                message=Message(
-                    chat=Chat(id='some_id', type='private'),
-                    from_user=from_user,
-                ),
+                message=Message(**message_data),
                 data="no_callback_data",
             )
             await self.execute_next_if_applicable(query)
