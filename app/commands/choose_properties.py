@@ -39,12 +39,12 @@ class ChoosePropertiesCommand(AbstractCommand):
         self._storage = storage
         self._notion = notion
 
-    async def is_applicable(self, message: Message) -> bool:
-        db_id = await self._storage.get_user_db_id(message.from_user.id)
+    async def is_applicable(self, query: CallbackQuery) -> bool:
+        db_id = await self._storage.get_user_db_id(query.from_user.id)
         return bool(db_id)
 
-    async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_user_tracked_properties(message.from_user.id))
+    async def is_finished(self, query: CallbackQuery) -> bool:
+        return bool(await self._storage.get_user_tracked_properties(query.from_user.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
