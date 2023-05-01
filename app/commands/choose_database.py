@@ -93,7 +93,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         data = ChooseDatabaseCallback.parse(query.data)
         db_id = data.get("db_id")
 
-        await self._storage.set_user_db_id(query.from_user.id, db_id)
+        await self._storage.set_user_db_id(query.message.from_user.id, db_id)
         await self._bot.send_message(
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
