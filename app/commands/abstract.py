@@ -20,6 +20,7 @@ class AbstractCommand:
         raise NotImplementedError
 
     async def execute_next_if_applicable(self, query: CallbackQuery) -> None:
+        print(f'\n\n{self} APPLICABLE: {await self._next.is_applicable(query.message)}, FINISHED: {not bool(await self._next.is_finished(query.message))}\n\n')
         if (
             await self._next.is_applicable(query.message)
             and not await self._next.is_finished(query.message)
