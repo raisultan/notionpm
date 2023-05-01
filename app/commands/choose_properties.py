@@ -154,4 +154,4 @@ class ChoosePropertiesCommand(AbstractCommand):
                 reply_markup=types.ReplyKeyboardRemove(),
             )
             await self._storage.set_user_private_chat_id(from_user_id, chat_id)
-            self.execute_next_if_applicable(query)
+            await self.execute_next_if_applicable(query)
