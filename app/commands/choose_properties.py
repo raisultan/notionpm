@@ -41,7 +41,7 @@ class ChoosePropertiesCommand(AbstractCommand):
 
     async def is_applicable(self, message: Message) -> bool:
         db_id = await self._storage.get_user_db_id(message.from_user.id)
-        return not bool(db_id)
+        return bool(db_id)
 
     async def is_finished(self, message: Message) -> bool:
         return bool(await self._storage.get_user_tracked_properties(message.from_user.id))
