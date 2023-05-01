@@ -8,7 +8,7 @@ class Storage:
     def __init__(self, redis: aioredis.Redis):
         self._redis = redis
 
-    async def save_user_access_token(self, user_id: str, access_token: str) -> None:
+    async def set_user_access_token(self, user_id: str, access_token: str) -> None:
         await self._redis.set(f'access_token_{user_id}', access_token)
 
     async def get_user_access_token(self, user_id: str) -> Optional[str]:
