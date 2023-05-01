@@ -55,7 +55,9 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
         access_token = await self._storage.get_user_access_token(message.from_user.id)
+        print(f'GOT AT FOR USER {message.from_user.id} ACCESS TOKEN {access_token}')
         db_id = await self._storage.get_user_db_id(message.from_user.id)
+        print(f'GOT DB FOR USER {message.from_user.id} DB ID {db_id}')
         user_notion = self._notion(auth=access_token)
 
         database = user_notion.databases.retrieve(db_id)
