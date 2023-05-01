@@ -36,7 +36,7 @@ class ConnectNotionCommand(AbstractCommand):
         return not await self.is_finished(message)
 
     async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_user_access_token(message.chat.id))
+        return bool(await self._storage.get_user_access_token(message.from_user.id))
 
     async def execute(self, message: Message) -> None:
         connect_url = self._notion_oauth.generate_connect_url(message.from_user.id)
