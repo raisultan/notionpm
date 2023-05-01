@@ -9,14 +9,15 @@ from aiogram.types import (
 )
 from aiogram.utils.callback_data import CallbackData
 
+from app.commands.abstract import AbstractCommand
 from app.storage import Storage
 
 SetupNotificationsCallback: Final[CallbackData] = CallbackData("set_notification", "notification_type")
 
 
-class SetupNotificationsCommand:
-    def __init__(self, bot: Bot, storage: Storage):
-        self._bot = bot
+class SetupNotificationsCommand(AbstractCommand):
+    def __init__(self, bot: Bot, next: AbstractCommand, storage: Storage):
+        super().__init__(bot, next)
         self._storage = storage
 
     async def is_applicable(self, message: Message) -> bool:

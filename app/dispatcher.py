@@ -7,52 +7,48 @@ from app.initializer import bot, storage
 
 from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
-from app.commands.choose_database import ChooseDatabaseCallback, ChooseDatabaseCommand
+from app.commands.choose_database import (
+    ChooseDatabaseCallback,
+    ChooseDatabaseCommand,
+)
 from app.commands.choose_properties import (
     ChoosePropertyCallback,
     ChoosePropertiesCommand,
     DonePropertySelectingCallback,
 )
-from app.commands.set_notifications import SetupNotificationsCallback, SetupNotificationsCommand
+from app.commands.set_notifications import (
+    SetupNotificationsCallback,
+    SetupNotificationsCommand,
+)
 from app.initializer import bot, notion_oauth
-from app.storage import Storage
 from notion_client import Client as NotionCLI
 import app.notion as notion_cli
-from app.commands.continuous import ContinuousCommand
 
-start = StartCommand(bot)
+setup_notifications = SetupNotificationsCommand(
+    bot=bot,
+    next=None,
+    storage=storage,
+)
+choose_properties = ChoosePropertiesCommand(
+    bot=bot,
+    next=setup_notifications,
+    storage=storage,
+    notion=NotionCLI,
+)
 choose_database = ChooseDatabaseCommand(
     bot=bot,
+    next=choose_properties,
     storage=storage,
     notion=NotionCLI,
     notion_cli=notion_cli,
 )
-choose_properties = ChoosePropertiesCommand(
-    bot=bot,
-    storage=storage,
-    notion=NotionCLI,
-)
-setup_notifications = SetupNotificationsCommand(
-    bot=bot,
-    storage=storage,
-)
-
-continuous_choose_database = ContinuousCommand(
-    command=choose_database,
-    finish=choose_database.handle_callback,
-    next=choose_properties,
-)
-continuous_choose_properties = ContinuousCommand(
-    command=choose_properties,
-    finish=choose_properties.handle_finish,
-    next=setup_notifications,
-)
 connect_notion = ConnectNotionCommand(
     bot=bot,
+    next=choose_database,
     storage=storage,
     notion_oauth=notion_oauth,
-    next=choose_database,
 )
+start = StartCommand(bot)
 
 
 class ForceUserSetupMiddleware(BaseMiddleware):
@@ -124,23 +120,23 @@ def setup_dispatcher():
         commands=["login"],
     )
     dp.register_message_handler(
-        continuous_choose_database.command.execute,
+        choose_database.execute,
         commands=["choose_database"],
     )
     dp.register_callback_query_handler(
-        continuous_choose_database.finish,
+        choose_database.handle_callback,
         ChooseDatabaseCallback.filter()
     )
     dp.register_message_handler(
-        continuous_choose_properties.command.execute,
+        choose_properties.execute,
         commands=["choose_properties"],
     )
     dp.register_callback_query_handler(
-        continuous_choose_properties.command.handle_callback,
+        choose_properties.handle_callback,
         ChoosePropertyCallback.filter(),
     )
     dp.register_callback_query_handler(
-        continuous_choose_properties.finish,
+        choose_properties.handle_finish,
         DonePropertySelectingCallback.filter(),
     )
     dp.register_message_handler(

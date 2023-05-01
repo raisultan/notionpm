@@ -7,24 +7,32 @@ from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Chat,
+    CallbackQuery,
 )
 from aiohttp import web
 from aiohttp.web_request import Request
 
 from app.initializer import BOT_URL
+from app.commands.abstract import AbstractCommand
 from v0_1.notion_oauth import NotionOAuth
 from app.storage import Storage
 
 
-class ConnectNotionCommand:
-    def __init__(self, bot: Bot, storage: Storage, notion_oauth: NotionOAuth, next: Any):
-        self._bot = bot
+class ConnectNotionCommand(AbstractCommand):
+    def __init__(
+        self,
+        bot: Bot,
+        next: AbstractCommand,
+        storage: Storage,
+        notion_oauth: NotionOAuth,
+    ):
+        super().__init__(bot, next)
         self._storage = storage
         self._notion_oauth = notion_oauth
         self._next = next
 
     async def is_applicable(self, message: Message) -> bool:
-        return True
+        return not await self.is_finished(message)
 
     async def is_finished(self, message: Message) -> bool:
         return bool(await self._storage.get_user_access_token(message.chat.id))
@@ -46,8 +54,14 @@ class ConnectNotionCommand:
     async def handle_oauth(self, request: Request):
         chat_id = await self._notion_oauth.handle_oauth(request)
         if chat_id:
-            message = Message(chat=Chat(id=int(chat_id), type='private'))
-            await self._next.execute(message)
+            query = CallbackQuery(
+                id='dummy_id',
+                from_user=None,
+                chat_instance=None,
+                message=Message(chat=Chat(id=int(chat_id), type='private')),
+                data="no_callback_data",
+            )
+            await self.execute_next_if_applicable(query)
             return web.HTTPFound(BOT_URL)
         else:
             return web.Response(status=400)

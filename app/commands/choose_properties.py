@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Final, Optional
 
 from aiogram import Bot
 from aiogram import types
@@ -12,13 +12,14 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
+from app.commands.abstract import AbstractCommand
 from app.storage import Storage
 
 ChoosePropertyCallback: Final[CallbackData] = CallbackData("choose_property", "prop_name")
 DonePropertySelectingCallback: Final[CallbackData] = CallbackData("done_property_selecting")
 
 
-class ChoosePropertiesCommand:
+class ChoosePropertiesCommand(AbstractCommand):
     SUPPORTED_PROPERTY_TYPES: Final[list[str]] = [
         'title',
         'status',
@@ -27,8 +28,14 @@ class ChoosePropertiesCommand:
         'url',
     ]
 
-    def __init__(self, bot: Bot, storage: Storage, notion: NotionCLI):
-        self._bot = bot
+    def __init__(
+        self,
+        bot: Bot,
+        next: Optional[AbstractCommand],
+        storage: Storage,
+        notion: NotionCLI,
+    ):
+        super().__init__(bot, next)
         self._storage = storage
         self._notion = notion
 
@@ -123,9 +130,7 @@ class ChoosePropertiesCommand:
             except exceptions.MessageNotModified:
                 pass
 
-    async def handle_finish(self, query: CallbackQuery) -> bool:
-        from app.dispatcher import setup_notifications
-
+    async def handle_finish(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
         tracked_properties = await self._storage.get_user_tracked_properties(chat_id)
         from_user_id = query.from_user.id
@@ -141,15 +146,12 @@ class ChoosePropertiesCommand:
                 "No properties have been selected. Please choose at least one property.",
             )
             await self.execute(query.message)
-            return False
+            return None
         else:
             await self._bot.send_message(
                 chat_id,
                 f"Selected properties: {', '.join(tracked_properties)}",
                 reply_markup=types.ReplyKeyboardRemove(),
             )
-            is_in_setup = await self._storage.get_user_setup_status(chat_id)
-            if is_in_setup:
-                await self._storage.set_user_private_chat_id(from_user_id, chat_id)
-                await setup_notifications.execute(query.message)
-            return True
+            await self._storage.set_user_private_chat_id(from_user_id, chat_id)
+            self.execute_next_if_applicable(query)
