@@ -44,9 +44,6 @@ class NotionOAuth:
         return response_json
 
     async def handle_oauth(self, request: Request) -> Optional[str]:
-        """
-        :return: chat_id of the user who authorized the bot
-        """
         try:
             code = request.query["code"]
             state = request.query["state"]
@@ -59,8 +56,8 @@ class NotionOAuth:
             await self.storage.set_user_access_token(user_id, access_token)
         except Exception as exc:
             print('Error while handling oauth:', repr(exc))
-            chat_id = None
-        return chat_id
+            user_id = None
+        return user_id
 
     def generate_connect_url(self, user_id: str) -> str:
         return (
