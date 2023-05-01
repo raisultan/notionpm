@@ -31,7 +31,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         self._notion = notion
 
     async def is_applicable(self, message: Message) -> bool:
-        access_token = await self._storage.get_user_access_token(message.chat.id)
+        access_token = await self._storage.get_user_access_token(message.from_user.id)
         return bool(access_token)
 
     async def is_finished(self, message: Message) -> bool:

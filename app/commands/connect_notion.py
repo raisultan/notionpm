@@ -8,6 +8,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     Chat,
     CallbackQuery,
+    User,
 )
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -52,13 +53,13 @@ class ConnectNotionCommand(AbstractCommand):
         await self._storage.set_connect_message_id(message.chat.id, connect_message.message_id)
 
     async def handle_oauth(self, request: Request):
-        chat_id = await self._notion_oauth.handle_oauth(request)
-        if chat_id:
+        user_id = await self._notion_oauth.handle_oauth(request)
+        if user_id:
             query = CallbackQuery(
                 id='dummy_id',
-                from_user=None,
+                from_user=User(id=user_id, is_bot=False, first_name='dummy', username='dummy'),
                 chat_instance=None,
-                message=Message(chat=Chat(id=int(chat_id), type='private')),
+                message=Message(chat=Chat(id='some_id', type='private')),
                 data="no_callback_data",
             )
             await self.execute_next_if_applicable(query)
