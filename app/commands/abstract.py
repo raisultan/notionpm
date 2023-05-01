@@ -25,7 +25,7 @@ class AbstractCommand:
             and not await self._next.is_finished(query)
         ):
             chat = Chat(id=query.message.chat.id, type='private')
-            user = query.from_user
+            user = User(id=query.from_user.id, is_bot=False, first_name='dummy', username='dummy')
             message_data = {
                 'chat': chat.to_python(),
                 'from': user.to_python(),
