@@ -44,6 +44,7 @@ class ConnectNotionCommand(AbstractCommand):
         markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
         reply = f"Connect your Notion workspace"
 
+        await self._storage.set_user_private_chat_id(message.from_user.id, message.chat.id)
         connect_message = await self._bot.send_message(
             message.chat.id,
             reply,
@@ -55,7 +56,8 @@ class ConnectNotionCommand(AbstractCommand):
     async def handle_oauth(self, request: Request):
         user_id = await self._notion_oauth.handle_oauth(request)
         if user_id:
-            chat = Chat(id='some_id', type='private')
+            chat_id = await self._storage.get_user_private_chat_id(user_id)
+            chat = Chat(id=chat_id, type='private')
             user = User(id=user_id, is_bot=False, first_name='dummy', username='dummy')
 
             message_data = {
