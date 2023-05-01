@@ -10,16 +10,24 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 from notion_client import Client as NotionCLI
 
+from app.commands.abstract import AbstractCommand
 from app.storage import Storage
 
 ChooseDatabaseCallback: Final[CallbackData] = CallbackData("choose_db", "db_id", "db_title")
 
 
-class ChooseDatabaseCommand:
+class ChooseDatabaseCommand(AbstractCommand):
     """Command to choose a database to track."""
 
-    def __init__(self, bot: Bot, storage: Storage, notion: NotionCLI, notion_cli: Any):
-        self._bot = bot
+    def __init__(
+        self,
+        bot: Bot,
+        next: AbstractCommand,
+        storage: Storage,
+        notion: NotionCLI,
+        notion_cli: Any,
+    ):
+        super().__init__(bot, next)
         self._storage = storage
         self._notion = notion
         self._notion_cli = notion_cli
@@ -82,7 +90,7 @@ class ChooseDatabaseCommand:
                 reply_markup=markup,
             )
 
-    async def handle_callback(self, query: CallbackQuery) -> bool:
+    async def handle_callback(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
         data = ChooseDatabaseCallback.parse(query.data)
         db_id = data.get("db_id")
@@ -92,4 +100,4 @@ class ChooseDatabaseCommand:
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
-        return True
+        await self.execute_next_if_applicable(query)
