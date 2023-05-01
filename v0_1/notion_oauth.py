@@ -54,6 +54,7 @@ class NotionOAuth:
 
             NotionClient(auth=access_token).search()
             await self.storage.set_user_access_token(user_id, access_token)
+            print(f'SET AT FOR USER {user_id} ACCESS TOKEN {access_token}')
         except Exception as exc:
             print('Error while handling oauth:', repr(exc))
             user_id = None

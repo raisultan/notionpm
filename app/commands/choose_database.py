@@ -32,6 +32,7 @@ class ChooseDatabaseCommand(AbstractCommand):
 
     async def is_applicable(self, message: Message) -> bool:
         access_token = await self._storage.get_user_access_token(message.from_user.id)
+        print(f'GOT AT FOR USER {message.from_user.id} ACCESS TOKEN {access_token}')
         return bool(access_token)
 
     async def is_finished(self, message: Message) -> bool:
@@ -40,6 +41,7 @@ class ChooseDatabaseCommand(AbstractCommand):
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
         access_token = await self._storage.get_user_access_token(message.from_user.id)
+        print(f'GOT AT FOR USER {message.from_user.id} ACCESS TOKEN {access_token}')
         user_notion = self._notion(auth=access_token)
         databases = user_notion.list_databases()
 
@@ -58,6 +60,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         if len(databases) == 1:
             db = databases[0]
             await self._storage.set_user_db_id(message.from_user.id, db.id)
+            print(f'SET DB FOR USER {message.from_user.id} DB ID {db.id}')
             await self._bot.send_message(
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
@@ -94,6 +97,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         db_id = data.get("db_id")
 
         await self._storage.set_user_db_id(query.message.from_user.id, db_id)
+        print(f'SET DB FOR USER {query.message.from_user.id} DB ID {db_id}')
         await self._bot.send_message(
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
