@@ -21,7 +21,7 @@ class SetupNotificationsCommand(AbstractCommand):
         self._storage = storage
 
     async def is_applicable(self, message: Message) -> bool:
-        tracked_properties = await self._storage.get_user_tracked_properties(message.chat.id)
+        tracked_properties = await self._storage.get_user_tracked_properties(message.from_user.id)
         return bool(tracked_properties)
 
     async def is_finished(self, message: Message) -> bool:
@@ -68,7 +68,6 @@ class SetupNotificationsCommand(AbstractCommand):
                     "Congratulations! 🎉 Your setup process is complete. "
                     "You can now start tracking changes in your Notion workspace.",
                 )
-            await self._storage.set_user_setup_status(chat_id, False)
         else:
             await self._bot.send_message(chat_id, "Something went wrong, please try again 🥺")
             await self.execute(query.message)
@@ -92,6 +91,5 @@ class SetupNotificationsCommand(AbstractCommand):
                     "Congratulations! 🎉 Your setup process is complete. "
                     "You can now start tracking changes in your Notion workspace.",
                 )
-            await self._storage.set_user_setup_status(from_user_id, False)
         else:
             return None

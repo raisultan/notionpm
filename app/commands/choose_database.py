@@ -35,7 +35,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         return bool(access_token)
 
     async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_user_db_id(message.chat.id))
+        return bool(await self._storage.get_user_db_id(message.from_user.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
@@ -57,7 +57,7 @@ class ChooseDatabaseCommand(AbstractCommand):
 
         if len(databases) == 1:
             db = databases[0]
-            await self._storage.set_user_db_id(message.chat.id, db.id)
+            await self._storage.set_user_db_id(message.from_user.id, db.id)
             await self._bot.send_message(
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
@@ -74,7 +74,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             inline_keyboard.append([button])
 
         markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
-        current_db_id = await self._storage.get_user_db_id(message.chat.id)
+        current_db_id = await self._storage.get_user_db_id(message.from_user.id)
         if current_db_id:
             text = (
                 "You have already chosen a default database. "
@@ -93,7 +93,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         data = ChooseDatabaseCallback.parse(query.data)
         db_id = data.get("db_id")
 
-        await self._storage.set_user_db_id(chat_id, db_id)
+        await self._storage.set_user_db_id(query.from_user.id, db_id)
         await self._bot.send_message(
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
