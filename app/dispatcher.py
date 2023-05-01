@@ -1,7 +1,5 @@
-from aiogram import Bot, Dispatcher
+from aiogram import Dispatcher
 from aiogram.types import Message, ContentType
-from aiogram.dispatcher.middlewares import BaseMiddleware
-from aiogram.dispatcher.handler import CancelHandler
 
 from app.initializer import bot, storage
 
@@ -22,6 +20,7 @@ from app.commands.set_notifications import (
 )
 from app.initializer import bot, notion_oauth
 from notion_client import Client as NotionCLI
+from app.middleware import ForceUserSetupMiddleware
 import app.notion as notion_cli
 
 setup_notifications = SetupNotificationsCommand(
@@ -49,54 +48,6 @@ connect_notion = ConnectNotionCommand(
     notion_oauth=notion_oauth,
 )
 start = StartCommand(bot)
-
-
-class ForceUserSetupMiddleware(BaseMiddleware):
-    def __init__(self, bot: Bot):
-        super().__init__()
-        self._bot = bot
-
-    async def on_pre_process_message(self, message: Message, data: dict):
-        if (
-            not await connect_notion.is_finished(message)
-            and await connect_notion.is_applicable(message)
-        ):
-            await self._bot.send_message(
-                message.chat.id,
-                "Oops, seems like you haven't setup me yet. Let's do that 😇"
-            )
-            await connect_notion.execute(message)
-            raise CancelHandler()
-        if (
-            not await choose_database.is_finished(message)
-            and await choose_database.is_applicable(message)
-        ):
-            await self._bot.send_message(
-                message.chat.id,
-                "Oops, seems like you haven't setup me yet. Let's do that 😇"
-            )
-            await choose_database.execute(message)
-            raise CancelHandler()
-        if (
-            not await choose_properties.is_finished(message)
-            and await choose_properties.is_applicable(message)
-        ):
-            await self._bot.send_message(
-                message.chat.id,
-                "Oops, seems like you haven't setup me yet. Let's do that 😇"
-            )
-            await choose_properties.execute(message)
-            raise CancelHandler()
-        if (
-            not await setup_notifications.is_finished(message)
-            and await setup_notifications.is_applicable(message)
-        ):
-            await self._bot.send_message(
-                message.chat.id,
-                "Oops, seems like you haven't setup me yet. Let's do that 😇"
-            )
-            await setup_notifications.execute(message)
-            raise CancelHandler()
 
 
 async def send_emojis_command(message: Message):
@@ -152,6 +103,12 @@ def setup_dispatcher():
         content_types=[ContentType.NEW_CHAT_MEMBERS],
     )
 
-    dp.middleware.setup(ForceUserSetupMiddleware(bot))
+    setup_commands = (
+        connect_notion,
+        choose_database,
+        choose_properties,
+        setup_notifications,
+    )
+    dp.middleware.setup(ForceUserSetupMiddleware(bot, setup_commands))
 
     return dp
