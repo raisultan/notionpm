@@ -40,11 +40,11 @@ class ChoosePropertiesCommand(AbstractCommand):
         self._notion = notion
 
     async def is_applicable(self, message: Message) -> bool:
-        db_id = await self._storage.get_user_db_id(message.chat.id)
+        db_id = await self._storage.get_user_db_id(message.from_user.id)
         return bool(db_id)
 
     async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_user_tracked_properties(message.chat.id))
+        return bool(await self._storage.get_user_tracked_properties(message.from_user.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
@@ -55,7 +55,7 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
         access_token = await self._storage.get_user_access_token(chat_id)
-        db_id = await self._storage.get_user_db_id(chat_id)
+        db_id = await self._storage.get_user_db_id(message.from_user.id)
         user_notion = self._notion(auth=access_token)
 
         database = user_notion.databases.retrieve(db_id)
@@ -96,7 +96,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         chat_id = query.message.chat.id
         data = ChoosePropertyCallback.parse(query.data)
         prop_name = data.get("prop_name")
-        tracked_properties = await self._storage.get_user_tracked_properties(chat_id)
+        tracked_properties = await self._storage.get_user_tracked_properties(query.from_user.id)
 
         if not tracked_properties:
             tracked_properties = []
@@ -106,7 +106,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         else:
             tracked_properties.remove(prop_name)
 
-        await self._storage.set_user_tracked_properties(chat_id, tracked_properties)
+        await self._storage.set_user_tracked_properties(query.from_user.id, tracked_properties)
 
         if tracked_properties:
             new_text = f"Current tracked properties: {', '.join(tracked_properties)}"
@@ -132,7 +132,7 @@ class ChoosePropertiesCommand(AbstractCommand):
 
     async def handle_finish(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
-        tracked_properties = await self._storage.get_user_tracked_properties(chat_id)
+        tracked_properties = await self._storage.get_user_tracked_properties(query.from_user.id)
         from_user_id = query.from_user.id
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
