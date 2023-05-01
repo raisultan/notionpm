@@ -39,7 +39,7 @@ class ChooseDatabaseCommand(AbstractCommand):
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
-        access_token = await self._storage.get_user_access_token(chat_id)
+        access_token = await self._storage.get_user_access_token(message.from_user.id)
         user_notion = self._notion(auth=access_token)
         databases = user_notion.list_databases()
 

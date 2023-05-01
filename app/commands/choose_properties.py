@@ -54,7 +54,7 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._bot.delete_message(chat_id, sent_message_id)
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
-        access_token = await self._storage.get_user_access_token(chat_id)
+        access_token = await self._storage.get_user_access_token(message.from_user.id)
         db_id = await self._storage.get_user_db_id(message.from_user.id)
         user_notion = self._notion(auth=access_token)
 
