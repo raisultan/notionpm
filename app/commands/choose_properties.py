@@ -154,4 +154,4 @@ class ChoosePropertiesCommand(AbstractCommand):
                 f"Selected properties: {', '.join(tracked_properties)}",
                 reply_markup=types.ReplyKeyboardRemove(),
             )
-            await self.execute_next_if_applicable(query)
+            await self.execute_next_if_applicable(query.message)
