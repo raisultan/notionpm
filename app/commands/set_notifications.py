@@ -54,6 +54,7 @@ class SetupNotificationsCommand(AbstractCommand):
         if notification_type == "private":
             await self._storage.set_user_notification_type(chat_id, "private")
             await self._storage.set_user_notification_chat_id(chat_id, chat_id)
+            await self.remove_temp_messages_from_previous(chat_id)
             await self._bot.send_message(
                 chat_id,
                 "Roger that! I will send you notifications in this chat 🤖",
@@ -82,6 +83,7 @@ class SetupNotificationsCommand(AbstractCommand):
                     chat_id,
                     "Heey guys! I'm here to help you track changes in your Notion workspace 🤖",
                 )
+            await self.remove_temp_messages_from_previous(private_chat_id)
             await self._bot.send_message(
                     private_chat_id,
                     "Congratulations! 🎉 Your setup process is complete. "
