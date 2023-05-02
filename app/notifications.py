@@ -157,7 +157,7 @@ app = Rocketry()
 async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
     # chat_ids represent unique users - through them we can get notification chat ids
-    chat_ids = await storage.get_notification_chat_ids()
+    chat_ids = await storage.get_notification_user_ids()
     if not chat_ids:
         logger.warning('No chat ids found!')
         return
