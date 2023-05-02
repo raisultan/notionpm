@@ -54,26 +54,10 @@ class ConnectNotionCommand(AbstractCommand):
         await self._storage.set_connect_message_id(message.chat.id, connect_message.message_id)
 
     async def handle_oauth(self, request: Request):
-        user_id = await self._notion_oauth.handle_oauth(request)
-        if user_id:
-            chat_id = await self._storage.get_user_private_chat_id(user_id)
-            chat = Chat(id=chat_id, type='private')
-            user = User(id=user_id, is_bot=False, first_name='dummy', username='dummy')
-
-            message_data = {
-                'chat': chat.to_python(),
-                'from': user.to_python(),
-                'message_id': 0,
-            }
-
-            query = CallbackQuery(
-                id='dummy_id',
-                from_user=user,
-                chat_instance=None,
-                message=Message(**message_data),
-                data="no_callback_data",
-            )
-            await self.execute_next_if_applicable(query)
+        chat_id = await self._notion_oauth.handle_oauth(request)
+        if chat_id:
+            message = Message(chat=Chat(id=int(chat_id), type='private'))
+            await self.execute_next_if_applicable(message)
             return web.HTTPFound(BOT_URL)
         else:
             return web.Response(status=400)
