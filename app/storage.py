@@ -63,9 +63,6 @@ class Storage:
     async def delete_tracked_properties_message_id(self, chat_id: str) -> None:
         await self._redis.delete(f'tracked_properties_message_id_{chat_id}')
 
-    async def set_connect_message_id(self, chat_id: str, message_id: int) -> None:
-        await self._redis.set(f'sent_connect_message_id_{chat_id}', message_id)
-
     async def get_connect_message_id(self, chat_id: str) -> Optional[int]:
         message_id = await self._redis.get(f'sent_connect_message_id_{chat_id}')
         if not message_id:
@@ -87,11 +84,11 @@ class Storage:
             return notification_type.decode('utf-8')
         return None
 
-    async def get_user_notification_chat_id(self, chat_id: int) -> Optional[int]:
+    async def get_user_notification_chat_id(self, chat_id: int) -> Optional[str]:
         key = f"user:{chat_id}:notification_chat_id"
-        chat_id = await self._redis.get(key)
-        if chat_id:
-            return int(chat_id.decode('utf-8'))
+        notification_chat_id = await self._redis.get(key)
+        if notification_chat_id:
+            return notification_chat_id.decode('utf-8')
         return None
 
     async def set_user_private_chat_id(self, user_id: int, chat_id: str) -> None:
@@ -104,3 +101,16 @@ class Storage:
         if chat_id:
             return int(chat_id.decode('utf-8'))
         return None
+
+    async def add_temporaty_message_id(self, chat_id: int, message_id: int) -> None:
+        key = f"user:{chat_id}:temporary_message_ids"
+        await self._redis.sadd(key, message_id)
+
+    async def remove_temporary_message_id(self, chat_id: int, message_id: int) -> None:
+        key = f"user:{chat_id}:temporary_message_ids"
+        await self._redis.srem(key, message_id)
+
+    async def get_temporary_message_ids(self, chat_id: int) -> list:
+        key = f"user:{chat_id}:temporary_message_ids"
+        message_ids = await self._redis.smembers(key)
+        return [int(message_id.decode('utf-8')) for message_id in message_ids]

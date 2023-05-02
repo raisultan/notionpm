@@ -35,8 +35,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         storage: Storage,
         notion: NotionClient,
     ):
-        super().__init__(bot, next)
-        self._storage = storage
+        super().__init__(bot, next, storage)
         self._notion = notion
 
     async def is_applicable(self, message: Message) -> bool:
@@ -56,7 +55,6 @@ class ChoosePropertiesCommand(AbstractCommand):
 
         access_token = await self._storage.get_user_access_token(message.chat.id)
         db_id = await self._storage.get_user_db_id(message.chat.id)
-        print(f'GOT DB FOR USER {message.from_user.id} DB ID {db_id}')
         user_notion = self._notion(auth=access_token)
 
         database = user_notion.databases.retrieve(db_id)
@@ -67,6 +65,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         }
         property_buttons = []
 
+        await self.remove_temp_messages_from_previous(chat_id)
         for prop_name, _ in supported_properties.items():
             button = InlineKeyboardButton(
                 prop_name,
@@ -82,16 +81,18 @@ class ChoosePropertiesCommand(AbstractCommand):
 
         markup = InlineKeyboardMarkup(inline_keyboard=property_buttons)
 
-        await self._bot.send_message(
+        props_list_message = await self._bot.send_message(
             chat_id,
             "Choose the properties you want to track:",
             reply_markup=markup,
         )
+        await self._storage.add_temporaty_message_id(chat_id, props_list_message.message_id)
 
-        await self._bot.send_message(
+        instruction_message = await self._bot.send_message(
             chat_id,
             "Press 'Done selecting✅' when you're finished selecting properties🤖",
         )
+        await self._storage.add_temporaty_message_id(chat_id, instruction_message.message_id)
 
     async def handle_callback(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
@@ -121,6 +122,7 @@ class ChoosePropertiesCommand(AbstractCommand):
                 text=new_text,
             )
             await self._storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
+            await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
         else:
             try:
                 await self._bot.edit_message_text(
@@ -134,7 +136,6 @@ class ChoosePropertiesCommand(AbstractCommand):
     async def handle_finish(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
         tracked_properties = await self._storage.get_user_tracked_properties(query.message.chat.id)
-        from_user_id = query.from_user.id
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
         if sent_message_id:
@@ -142,14 +143,15 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
         if not tracked_properties:
-            await self._bot.send_message(
+            sent_message = await self._bot.send_message(
                 chat_id,
                 "No properties have been selected. Please choose at least one property.",
             )
+            await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
             await self.execute(query.message)
             return None
         else:
-            await self._bot.send_message(
+            sent_message = await self._bot.send_message(
                 chat_id,
                 f"Selected properties: {', '.join(tracked_properties)}",
                 reply_markup=types.ReplyKeyboardRemove(),

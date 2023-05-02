@@ -4,11 +4,14 @@ from typing import Optional
 from aiogram import Bot
 from aiogram.types import Message
 
+from app.storage import Storage
+
 
 class AbstractCommand:
-    def __init__(self, bot: Bot, next: Optional['AbstractCommand']):
+    def __init__(self, bot: Bot, next: Optional['AbstractCommand'], storage: Storage):
         self._bot = bot
         self._next = next
+        self._storage = storage
 
     async def execute(self, message: Message) -> None:
         raise NotImplementedError
@@ -27,3 +30,12 @@ class AbstractCommand:
             await self._next.execute(message)
         else:
             return None
+
+    async def remove_temp_messages_from_previous(self, chat_id: int) -> None:
+        message_ids = await self._storage.get_temporary_message_ids(chat_id)
+        for message_id in message_ids:
+            try:
+                await self._bot.delete_message(chat_id, message_id)
+                await self._storage.remove_temporary_message_id(chat_id, message_id)
+            except Exception:
+                pass

@@ -1,6 +1,5 @@
-from typing import Any, Final
+from typing import Final
 
-from aiogram import Bot
 from aiogram.types import (
     CallbackQuery,
     Message,
@@ -10,16 +9,11 @@ from aiogram.types import (
 from aiogram.utils.callback_data import CallbackData
 
 from app.commands.abstract import AbstractCommand
-from app.storage import Storage
 
 SetupNotificationsCallback: Final[CallbackData] = CallbackData("set_notification", "notification_type")
 
 
 class SetupNotificationsCommand(AbstractCommand):
-    def __init__(self, bot: Bot, next: AbstractCommand, storage: Storage):
-        super().__init__(bot, next)
-        self._storage = storage
-
     async def is_applicable(self, message: Message) -> bool:
         tracked_properties = await self._storage.get_user_tracked_properties(message.chat.id)
         return bool(tracked_properties)
@@ -34,6 +28,7 @@ class SetupNotificationsCommand(AbstractCommand):
         bot_username = (await self._bot.me).username
         add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
 
+        await self.remove_temp_messages_from_previous(chat_id)
         private_button = InlineKeyboardButton(
             "Stay here 👨‍💻",
             callback_data=SetupNotificationsCallback.new(notification_type="private")
@@ -44,11 +39,12 @@ class SetupNotificationsCommand(AbstractCommand):
         )
         markup = InlineKeyboardMarkup(inline_keyboard=[[private_button, group_button]])
 
-        await self._bot.send_message(
+        sent_message = await self._bot.send_message(
             chat_id,
             "Choose where you would like to receive notifications:",
             reply_markup=markup,
         )
+        await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
 
     async def handle_private_messages(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
@@ -68,7 +64,8 @@ class SetupNotificationsCommand(AbstractCommand):
                     "You can now start tracking changes in your Notion workspace.",
                 )
         else:
-            await self._bot.send_message(chat_id, "Something went wrong, please try again 🥺")
+            sent_message = await self._bot.send_message(chat_id, "Something went wrong, please try again 🥺")
+            await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
             await self.execute(query.message)
 
     async def handle_group_chat(self, message: Message) -> None:
