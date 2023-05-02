@@ -99,4 +99,4 @@ class ChooseDatabaseCommand(AbstractCommand):
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
-        await self.execute_next_if_applicable(query)
+        await self.execute_next_if_applicable(query.message)
