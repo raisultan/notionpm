@@ -47,24 +47,23 @@ class NotionOAuth:
         try:
             code = request.query["code"]
             state = request.query["state"]
-            user_id = state.split("-")[1]
+            chat_id = state.split("-")[1]
 
             response = await self.make_oauth_request(code)
             access_token = response["access_token"]
 
             NotionClient(auth=access_token).search()
-            await self.storage.set_user_access_token(user_id, access_token)
-            print(f'SET AT FOR USER {user_id} ACCESS TOKEN {access_token}')
+            await self.storage.set_user_access_token(chat_id, access_token)
         except Exception as exc:
             print('Error while handling oauth:', repr(exc))
-            user_id = None
-        return user_id
+            chat_id = None
+        return chat_id
 
-    def generate_connect_url(self, user_id: str) -> str:
+    def generate_connect_url(self, chat_id: str) -> str:
         return (
             "https://api.notion.com/v1/oauth/authorize"
             f"?client_id={self.client_id}"
             f"&redirect_uri={self.redirect_uri}"
             f"&response_type=code"
-            f"&state=instance-{user_id}"
+            f"&state=instance-{chat_id}"
         )
