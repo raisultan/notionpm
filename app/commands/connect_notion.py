@@ -36,10 +36,10 @@ class ConnectNotionCommand(AbstractCommand):
         return not await self.is_finished(message)
 
     async def is_finished(self, message: Message) -> bool:
-        return bool(await self._storage.get_user_access_token(message.from_user.id))
+        return bool(await self._storage.get_user_access_token(message.chat.id))
 
     async def execute(self, message: Message) -> None:
-        connect_url = self._notion_oauth.generate_connect_url(message.from_user.id)
+        connect_url = self._notion_oauth.generate_connect_url(message.chat.id)
         button = InlineKeyboardButton(text="Connect Notion📖", url=connect_url)
         markup = InlineKeyboardMarkup(inline_keyboard=[[button]])
         reply = f"Connect your Notion workspace"

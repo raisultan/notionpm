@@ -156,18 +156,19 @@ app = Rocketry()
 @app.task(every('10 seconds'))
 async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
-    user_ids = await storage.get_notification_user_ids()
-    if not user_ids:
+    # chat_ids represent unique users - through them we can get notification chat ids
+    chat_ids = await storage.get_notification_chat_ids()
+    if not chat_ids:
         logger.warning('No chat ids found!')
         return
 
-    for user_id in user_ids:
-        access_token = await storage.get_user_access_token(user_id)
-        db_id = await storage.get_user_db_id(user_id)
-        track_props = await storage.get_user_tracked_properties(user_id)
+    for chat_id in chat_ids:
+        access_token = await storage.get_user_access_token(chat_id)
+        db_id = await storage.get_user_db_id(chat_id)
+        track_props = await storage.get_user_tracked_properties(chat_id)
 
         if not access_token or not db_id or not track_props:
-            logger.warning(f'Setup not completed for {user_id}! Skipping...')
+            logger.warning(f'Setup not completed for {chat_id}! Skipping...')
             continue
 
         try:
@@ -177,15 +178,15 @@ async def track_changes_for_all():
             changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
             await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
-            logger.exception(f'Exception for {user_id}: {repr(e)}')
+            logger.exception(f'Exception for {chat_id}: {repr(e)}')
             continue
         if not changes:
-            logger.info(f'No changes for {user_id} - {db_id}!')
+            logger.info(f'No changes for {chat_id} - {db_id}!')
             continue
 
         for page_change in changes:
             change_message = create_properties_changed_message_with_button(page_change)
-            chat_id = await storage.get_user_notification_chat_id(user_id)
+            chat_id = await storage.get_user_notification_chat_id(chat_id)
             await bot.send_message(
                 chat_id,
                 change_message,
