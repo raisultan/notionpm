@@ -26,8 +26,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         storage: Storage,
         notion: NotionClient,
     ):
-        super().__init__(bot, next)
-        self._storage = storage
+        super().__init__(bot, next, storage)
         self._notion = notion
 
     async def is_applicable(self, message: Message) -> bool:
@@ -51,18 +50,16 @@ class ChooseDatabaseCommand(AbstractCommand):
             await self.execute(message)
             return None
 
-        connect_message_id = await self._storage.get_connect_message_id(message.chat.id)
-        if connect_message_id:
-            await self._bot.delete_message(chat_id, connect_message_id)
-
+        await self.remove_temp_messages_from_previous(chat_id)
         if len(databases) == 1:
             db = databases[0]
             await self._storage.set_user_db_id(message.chat.id, db.id)
             print(f'SET DB FOR USER {message.from_user.id} DB ID {db.id}')
-            await self._bot.send_message(
+            sent_message = await self._bot.send_message(
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
             )
+            await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
             return None
 
         inline_keyboard = []
@@ -81,13 +78,14 @@ class ChooseDatabaseCommand(AbstractCommand):
                 "You have already chosen a default database. "
                 "You can choose a new one from the list below:"
             )
-            await self._bot.send_message(message.chat.id, text, reply_markup=markup)
+            sent_message = await self._bot.send_message(message.chat.id, text, reply_markup=markup)
         else:
-            await self._bot.send_message(
+            sent_message = await self._bot.send_message(
                 message.chat.id,
                 "Choose the default database for team tasks:",
                 reply_markup=markup,
             )
+        await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
 
     async def handle_callback(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
@@ -95,8 +93,9 @@ class ChooseDatabaseCommand(AbstractCommand):
         db_id = data.get("db_id")
 
         await self._storage.set_user_db_id(query.message.chat.id, db_id)
-        await self._bot.send_message(
+        sent_message = await self._bot.send_message(
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
+        await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
         await self.execute_next_if_applicable(query.message)
