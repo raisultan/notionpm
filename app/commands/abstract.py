@@ -31,7 +31,7 @@ class AbstractCommand:
         else:
             return None
 
-    async def remove_temp_messages_from_previous(self, chat_id: int) -> None:
+    async def remove_temporary_messages_from_previous(self, chat_id: int) -> None:
         message_ids = await self._storage.get_temporary_message_ids(chat_id)
         for message_id in message_ids:
             try:
