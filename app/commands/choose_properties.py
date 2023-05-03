@@ -65,7 +65,7 @@ class ChoosePropertiesCommand(AbstractCommand):
         }
         property_buttons = []
 
-        await self.remove_temp_messages_from_previous(chat_id)
+        await self.remove_temporary_messages_from_previous(chat_id)
         for prop_name, _ in supported_properties.items():
             button = InlineKeyboardButton(
                 prop_name,

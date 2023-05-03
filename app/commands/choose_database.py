@@ -50,7 +50,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             await self.execute(message)
             return None
 
-        await self.remove_temp_messages_from_previous(chat_id)
+        await self.remove_temporary_messages_from_previous(chat_id)
         if len(databases) == 1:
             db = databases[0]
             await self._storage.set_user_db_id(message.chat.id, db.id)
