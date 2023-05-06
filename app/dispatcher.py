@@ -1,4 +1,7 @@
+import re
+
 from aiogram import Dispatcher
+from aiogram.dispatcher.filters import Regexp
 from aiogram.types import Message, ContentType
 
 from app.initializer import bot, storage
@@ -18,13 +21,18 @@ from app.commands.set_notifications import (
     SetupNotificationsCallback,
     SetupNotificationsCommand,
 )
+from app.commands.toggle_notifications import ToggleNotificationsCommand
 from app.initializer import bot, notion_oauth
 from app.middleware import ForceUserSetupMiddleware
 from app.notion import NotionClient
 
+toggle_notifications = ToggleNotificationsCommand(
+    bot=bot,
+    storage=storage,
+)
 setup_notifications = SetupNotificationsCommand(
     bot=bot,
-    next=None,
+    next=toggle_notifications,
     storage=storage,
 )
 choose_properties = ChoosePropertiesCommand(
@@ -100,6 +108,11 @@ def setup_dispatcher():
         setup_notifications.handle_group_chat,
         content_types=[ContentType.NEW_CHAT_MEMBERS],
     )
+    toggle_notifications_pattern = re.compile(
+        r'^(Pause notifications ⏸️|Unpause notifications ⏯️)$',
+        re.IGNORECASE
+    )
+    dp.message_handler(Regexp(toggle_notifications_pattern))(toggle_notifications.execute)
 
     setup_commands = (
         connect_notion,
