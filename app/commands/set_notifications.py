@@ -19,7 +19,7 @@ class SetupNotificationsCommand(AbstractCommand):
         return bool(tracked_properties)
 
     async def is_finished(self, message: Message) -> bool:
-        notification_type = await self._storage.get_user_notification_type(message.chat.id)
+        notification_type = await self._storage.get_user_notification_chat_id(message.chat.id)
         chat_id = await self._storage.get_user_notification_chat_id(message.chat.id)
         return notification_type and chat_id
 
@@ -52,7 +52,6 @@ class SetupNotificationsCommand(AbstractCommand):
         notification_type = data.get("notification_type")
 
         if notification_type == "private":
-            await self._storage.set_user_notification_type(chat_id, "private")
             await self._storage.set_user_notification_chat_id(chat_id, chat_id)
             await self.remove_temporary_messages_from_previous(chat_id)
             await self._bot.send_message(
@@ -76,7 +75,6 @@ class SetupNotificationsCommand(AbstractCommand):
 
         if message.new_chat_members[0].is_bot and message.new_chat_members[0].id == bot_user.id:
             private_chat_id = await self._storage.get_user_private_chat_id(from_user_id)
-            await self._storage.set_user_notification_type(private_chat_id, "group")
             await self._storage.set_user_notification_chat_id(private_chat_id, chat_id)
 
             await self._bot.send_message(

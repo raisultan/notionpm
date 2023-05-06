@@ -69,20 +69,9 @@ class Storage:
             return None
         return int(message_id.decode('utf-8'))
 
-    async def set_user_notification_type(self, chat_id: int, notification_type: str):
-        key = f"user:{chat_id}:notification_type"
-        await self._redis.set(key, notification_type)
-
     async def set_user_notification_chat_id(self, private_chat_id: int, chat_id: int):
         key = f"user:{private_chat_id}:notification_chat_id"
         await self._redis.set(key, chat_id)
-
-    async def get_user_notification_type(self, chat_id: int) -> Optional[str]:
-        key = f"user:{chat_id}:notification_type"
-        notification_type = await self._redis.get(key)
-        if notification_type:
-            return notification_type.decode('utf-8')
-        return None
 
     async def get_user_notification_chat_id(self, chat_id: int) -> Optional[str]:
         key = f"user:{chat_id}:notification_chat_id"
