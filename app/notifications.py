@@ -156,19 +156,24 @@ app = Rocketry()
 @app.task(every('10 seconds'))
 async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
-    # chat_ids represent unique users - through them we can get notification chat ids
-    chat_ids = await storage.get_notification_user_ids()
-    if not chat_ids:
+    active_notification_chat_ids = await storage.get_all_active_notification_chat_ids()
+    if not active_notification_chat_ids:
         logger.warning('No chat ids found!')
         return
 
-    for chat_id in chat_ids:
-        access_token = await storage.get_user_access_token(chat_id)
-        db_id = await storage.get_user_db_id(chat_id)
-        track_props = await storage.get_user_tracked_properties(chat_id)
+    for user_chat_id in active_notification_chat_ids:
+        chat_id = await storage.get_user_notification_chat_id(user_chat_id)
+        if not chat_id:
+            logger.warning(
+                f'No notification chat id found for {user_chat_id}! Skipping...'
+            )
+
+        access_token = await storage.get_user_access_token(user_chat_id)
+        db_id = await storage.get_user_db_id(user_chat_id)
+        track_props = await storage.get_user_tracked_properties(user_chat_id)
 
         if not access_token or not db_id or not track_props:
-            logger.warning(f'Setup not completed for {chat_id}! Skipping...')
+            logger.warning(f'Setup not completed for {user_chat_id}! Skipping...')
             continue
 
         try:
@@ -186,7 +191,6 @@ async def track_changes_for_all():
 
         for page_change in changes:
             change_message = create_properties_changed_message_with_button(page_change)
-            chat_id = await storage.get_user_notification_chat_id(chat_id)
             await bot.send_message(
                 chat_id,
                 change_message,
