@@ -144,10 +144,9 @@ def create_properties_changed_message_with_button(page_change: PageChange) -> tu
         messages.append(field_message)
 
     message = (
-        f"📄 Changes in <a href='{escape_html(page_change.url)}'>{escape_html(page_change.name)}</a>:\n\n"
+        f"📬 Changes in <a href='{escape_html(page_change.url)}'>{escape_html(page_change.name)}</a>:\n\n"
         f"{''.join(messages)}"
     )
-
     return message
 
 
