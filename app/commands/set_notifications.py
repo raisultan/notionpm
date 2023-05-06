@@ -55,14 +55,12 @@ class SetupNotificationsCommand(AbstractCommand):
             await self._storage.set_user_notification_chat_id(chat_id, chat_id)
             await self._storage.set_user_notification_is_active(chat_id, True)
             await self.remove_temporary_messages_from_previous(chat_id)
-            await self._bot.send_message(
-                chat_id,
-                "Roger that! I will send you notifications in this chat 🤖",
-            )
+            keyboard = await self._next.get_notifications_keyboard(chat_id)
             await self._bot.send_message(
                     chat_id,
                     "Congratulations! 🎉 Your setup process is complete. "
                     "You can now start tracking changes in your Notion workspace.",
+                    reply_markup=keyboard
                 )
         else:
             sent_message = await self._bot.send_message(chat_id, "Something went wrong, please try again 🥺")
@@ -84,10 +82,12 @@ class SetupNotificationsCommand(AbstractCommand):
                     "Heey guys! I'm here to help you track changes in your Notion workspace 🤖",
                 )
             await self.remove_temporary_messages_from_previous(private_chat_id)
+            keyboard = await self._next.get_notifications_keyboard(private_chat_id)
             await self._bot.send_message(
                     private_chat_id,
                     "Congratulations! 🎉 Your setup process is complete. "
                     "You can now start tracking changes in your Notion workspace.",
+                    reply_markup=keyboard,
                 )
         else:
             return None
