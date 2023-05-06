@@ -26,7 +26,7 @@ class ForceUserSetupMiddleware(BaseMiddleware):
             ):
                 await self._bot.send_message(
                     message.chat.id,
-                    "Oops, seems like you haven't set me up yet. Let's do that first 😇"
+                    "Hi there 👋🤖\nSeems like you haven't set me up yet. Let's do that 🚀"
                 )
                 await command.execute(message)
                 raise CancelHandler()
