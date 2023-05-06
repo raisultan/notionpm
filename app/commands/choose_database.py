@@ -38,7 +38,7 @@ class ChooseDatabaseCommand(AbstractCommand):
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
-        access_token = await self._storage.get_user_access_token(message.chat.id)
+        access_token = await self._storage.get_user_access_token(chat_id)
         user_notion = self._notion(auth=access_token)
         databases = user_notion.list_databases()
 
@@ -53,12 +53,17 @@ class ChooseDatabaseCommand(AbstractCommand):
         await self.remove_temporary_messages_from_previous(chat_id)
         if len(databases) == 1:
             db = databases[0]
+            db_id = db.id
             await self._storage.set_user_db_id(message.chat.id, db.id)
-            print(f'SET DB FOR USER {message.from_user.id} DB ID {db.id}')
             sent_message = await self._bot.send_message(
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
             )
+
+            access_token = await self._storage.get_user_access_token(chat_id)
+            db_state = user_notion.databases.query(database_id=db_id)
+            await self._storage.set_user_db_state(db_id, db_state)
+
             await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
             return None
 
@@ -97,5 +102,11 @@ class ChooseDatabaseCommand(AbstractCommand):
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
+
+        access_token = await self._storage.get_user_access_token(chat_id)
+        user_notion = self._notion(auth=access_token)
+        db_state = user_notion.databases.query(database_id=db_id)
+        await self._storage.set_user_db_state(db_id, db_state)
+
         await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
         await self.execute_next_if_applicable(query.message)
