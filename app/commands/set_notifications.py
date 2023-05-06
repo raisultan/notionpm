@@ -53,6 +53,7 @@ class SetupNotificationsCommand(AbstractCommand):
 
         if notification_type == "private":
             await self._storage.set_user_notification_chat_id(chat_id, chat_id)
+            await self._storage.set_user_notification_is_active(chat_id, True)
             await self.remove_temporary_messages_from_previous(chat_id)
             await self._bot.send_message(
                 chat_id,
@@ -76,6 +77,7 @@ class SetupNotificationsCommand(AbstractCommand):
         if message.new_chat_members[0].is_bot and message.new_chat_members[0].id == bot_user.id:
             private_chat_id = await self._storage.get_user_private_chat_id(from_user_id)
             await self._storage.set_user_notification_chat_id(private_chat_id, chat_id)
+            await self._storage.set_user_notification_is_active(private_chat_id, True)
 
             await self._bot.send_message(
                     chat_id,
