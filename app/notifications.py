@@ -91,7 +91,7 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
                     page_property_changes,
                 )
             )
-    return db_changes
+    return db_changes, added_pages, removed_pages
 
 
 def track_change_on_property(old: dict, new: dict) -> tuple:
@@ -180,15 +180,29 @@ async def track_changes_for_all():
             notion = NotionClient(auth=access_token)
             old_db_state = await storage.get_user_db_state(db_id)
             new_db_state = notion.databases.query(database_id=db_id)
-            changes = track_db_changes(old_db_state, new_db_state['results'], track_props)
+            changes, added_pages, removed_pages = track_db_changes(
+                old_db_state,
+                new_db_state['results'],
+                track_props,
+            )
             await storage.set_user_db_state(db_id, new_db_state)
         except Exception as e:
             logger.exception(f'Exception for {chat_id}: {repr(e)}')
             continue
-        if not changes:
-            logger.info(f'No changes for {chat_id} - {db_id}!')
-            continue
 
+        for page in added_pages:
+            page_name = get_page_name(page)
+            page_url = get_page_url(page)
+            added_message = f"📄 New page added: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
+            await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
+
+        for page in removed_pages:
+            page_name = get_page_name(page)
+            page_url = get_page_url(page)
+            removed_message = f"📄 Page removed: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
+            await bot.send_message(chat_id, removed_message, parse_mode=ParseMode.HTML)
+
+        # Send messages for changes
         for page_change in changes:
             change_message = create_properties_changed_message_with_button(page_change)
             await bot.send_message(
