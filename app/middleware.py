@@ -15,6 +15,10 @@ class ForceUserSetupMiddleware(BaseMiddleware):
         self._setup_commands = setup_commands
 
     async def on_pre_process_message(self, message: Message, data: dict) -> None:
+        chat_type = message.chat.type
+        if chat_type == "group" or chat_type == "supergroup":
+            return None
+
         for command in self._setup_commands:
             if (
                 not await command.is_finished(message)

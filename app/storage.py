@@ -69,20 +69,9 @@ class Storage:
             return None
         return int(message_id.decode('utf-8'))
 
-    async def set_user_notification_type(self, chat_id: int, notification_type: str):
-        key = f"user:{chat_id}:notification_type"
-        await self._redis.set(key, notification_type)
-
     async def set_user_notification_chat_id(self, private_chat_id: int, chat_id: int):
         key = f"user:{private_chat_id}:notification_chat_id"
         await self._redis.set(key, chat_id)
-
-    async def get_user_notification_type(self, chat_id: int) -> Optional[str]:
-        key = f"user:{chat_id}:notification_type"
-        notification_type = await self._redis.get(key)
-        if notification_type:
-            return notification_type.decode('utf-8')
-        return None
 
     async def get_user_notification_chat_id(self, chat_id: int) -> Optional[str]:
         key = f"user:{chat_id}:notification_chat_id"
@@ -90,6 +79,23 @@ class Storage:
         if notification_chat_id:
             return notification_chat_id.decode('utf-8')
         return None
+
+    async def set_user_notification_is_active(self, chat_id: int, is_active: bool) -> None:
+        key = "active_notifications"
+        if is_active:
+            await self._redis.sadd(key, chat_id)
+        else:
+            await self._redis.srem(key, chat_id)
+
+    async def get_user_notification_is_active(self, chat_id: int) -> bool:
+        key = "active_notifications"
+        is_active = await self._redis.sismember(key, chat_id)
+        return bool(is_active)
+
+    async def get_all_active_notification_chat_ids(self) -> list[int]:
+        key = "active_notifications"
+        active_chat_ids = await self._redis.smembers(key)
+        return [int(chat_id.decode('utf-8')) for chat_id in active_chat_ids]
 
     async def set_user_private_chat_id(self, user_id: int, chat_id: str) -> None:
         key = f"user:{user_id}:private_chat_id"
