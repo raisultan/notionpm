@@ -49,7 +49,10 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
     for signal in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(signal, lambda s=signal: asyncio.create_task(shutdown(s, loop)))
+        loop.add_signal_handler(
+            signal,
+            lambda s=signal: asyncio.create_task(shutdown(s, loop))
+        )
 
     try:
         loop.run_until_complete(main())
