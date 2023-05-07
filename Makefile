@@ -1,26 +1,7 @@
-restart-redis:
-	@echo "Stopping Redis..."
-	docker stop notionpm-redis
-
-	@echo "Removing Redis..."
-	docker rm notionpm-redis
-
+start-redis:
 	@echo "Starting Redis..."
-	docker run --name notionpm-redis -d -p 6379:6379 redis
+	docker run --name notionpm-redis -p 6379:6379 -v /root/redis-data:/data -d redis redis-server --save 60 1
 
 start-app:
-	@echo "Starting app..."
-	python3 -m app.service
-
-restart-all:
-	@echo "Stopping Redis..."
-	docker stop notionpm-redis
-
-	@echo "Removing Redis..."
-	docker rm notionpm-redis
-
-	@echo "Starting Redis..."
-	docker run --name notionpm-redis -d -p 6379:6379 redis
-
 	@echo "Starting app..."
 	python3 -m app.service
