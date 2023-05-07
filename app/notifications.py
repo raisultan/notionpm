@@ -192,13 +192,13 @@ async def track_changes_for_all():
         for page in added_pages:
             page_name = get_page_name(page)
             page_url = get_page_url(page)
-            added_message = f"📄 New page added: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
+            added_message = f"🗿 New page added: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
             await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
 
         for page in removed_pages:
             page_name = get_page_name(page)
             page_url = get_page_url(page)
-            removed_message = f"📄 Page removed: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
+            removed_message = f"🗑️ Page removed: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
             await bot.send_message(chat_id, removed_message, parse_mode=ParseMode.HTML)
 
         # Send messages for changes
