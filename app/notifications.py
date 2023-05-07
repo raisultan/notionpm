@@ -126,7 +126,11 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
 
 
 def get_page_name(page: dict) -> str:
-    return page['properties']['Name']['title'][0]['plain_text']
+    title_prop = page['properties']['Name']['title']
+    if title_prop:
+        return title_prop[0]['plain_text']
+    else:
+        return 'Untitled'
 
 
 def get_page_url(page: dict) -> str:
