@@ -26,35 +26,6 @@ from app.initializer import bot, notion_oauth
 from app.middleware import ForceUserSetupMiddleware
 from app.notion import NotionClient
 
-toggle_notifications = ToggleNotificationsCommand(
-    bot=bot,
-    storage=storage,
-)
-setup_notifications = SetupNotificationsCommand(
-    bot=bot,
-    next=toggle_notifications,
-    storage=storage,
-)
-choose_properties = ChoosePropertiesCommand(
-    bot=bot,
-    next=setup_notifications,
-    storage=storage,
-    notion=NotionClient,
-)
-choose_database = ChooseDatabaseCommand(
-    bot=bot,
-    next=choose_properties,
-    storage=storage,
-    notion=NotionClient,
-)
-connect_notion = ConnectNotionCommand(
-    bot=bot,
-    next=choose_database,
-    storage=storage,
-    notion_oauth=notion_oauth,
-)
-start = StartCommand(bot)
-
 
 async def send_emojis_command(message: Message):
     emojis = "😀 😃 😄 😁 😆"
@@ -65,6 +36,35 @@ async def send_emojis_command(message: Message):
 
 
 def setup_dispatcher():
+    toggle_notifications = ToggleNotificationsCommand(
+        bot=bot,
+        storage=storage,
+    )
+    setup_notifications = SetupNotificationsCommand(
+        bot=bot,
+        next=toggle_notifications,
+        storage=storage,
+    )
+    choose_properties = ChoosePropertiesCommand(
+        bot=bot,
+        next=setup_notifications,
+        storage=storage,
+        notion=NotionClient,
+    )
+    choose_database = ChooseDatabaseCommand(
+        bot=bot,
+        next=choose_properties,
+        storage=storage,
+        notion=NotionClient,
+    )
+    connect_notion = ConnectNotionCommand(
+        bot=bot,
+        next=choose_database,
+        storage=storage,
+        notion_oauth=notion_oauth,
+    )
+    start = StartCommand(bot)
+
     dp = Dispatcher(bot)
 
     dp.register_message_handler(send_emojis_command, commands=["emojis"])
