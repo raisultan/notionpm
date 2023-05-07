@@ -43,12 +43,12 @@ async def bot(app: Application):
 
 
 async def storage(app: Application):
-    app['storage'] = Storage(redis)
+    app['storage'] = Storage(app['redis'])
 
 
 async def notion_oauth(app: Application):
     app['notion_oauth'] = NotionOAuth(
-        storage=storage,
+        storage=app['storage'],
         client_id=app['config']['notion_client_id'],
         client_secret=app['config']['notion_client_secret'],
         redirect_uri=app['config']['notion_redirect_uri'],
@@ -144,4 +144,4 @@ async def commands(app: Application):
         choose_properties,
         setup_notifications,
     )
-    app['dispatcher'].middleware.setup(ForceUserSetupMiddleware(bot, setup_commands))
+    app['dispatcher'].middleware.setup(ForceUserSetupMiddleware(app['bot'], setup_commands))

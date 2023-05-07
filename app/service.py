@@ -47,14 +47,12 @@ def init_app(config: dict) -> web.Application:
     app.cleanup_ctx.extend(client_context)
     app.on_startup.extend(on_startup)
     app.on_shutdown.extend([stop_polling, shutdown_rocketry])
-    # setup_routes(app)
 
     return app
 
 
 def start() -> None:
     config = load_config()
-    print(config)
     app = init_app(config)
 
     web.run_app(app, port=8080, access_log=None)
