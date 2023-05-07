@@ -1,28 +1,19 @@
 import logging
-import os
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 from html import escape
 
-from aiogram import Bot
 from aiogram.types import ParseMode
-from dotenv import load_dotenv
-from rocketry import Rocketry
-from rocketry.conds import every
+from aiohttp.web import Application
 
-from app.dispatcher import storage
 from app.notion import NotionClient
-
-load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-bot = Bot(token=os.environ["BOT_TOKEN"])
 
 
 @dataclass
@@ -82,7 +73,10 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
         for prop in props:
             try:
                 if old_page_props[prop] != new_page_props[prop]:
-                    old_value, new_value = track_change_on_property(old_page_props[prop], new_page_props[prop])
+                    old_value, new_value = track_change_on_property(
+                        old_page_props[prop],
+                        new_page_props[prop],
+                    )
                     page_property_changes.append(PropertyChange(prop, old_value, new_value))
             except Exception as ex:
                 logger.error(f'Error while tracking changes in property {prop}: {ex}')
@@ -158,10 +152,10 @@ def create_properties_changed_message_with_button(page_change: PageChange) -> tu
     return message
 
 
-app = Rocketry()
+async def track_changes_for_all(app: Application):
+    storage = app['storage']
+    bot = app['bot']
 
-@app.task(every('10 seconds'))
-async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
     active_notification_chat_ids = await storage.get_all_active_notification_chat_ids()
     if not active_notification_chat_ids:

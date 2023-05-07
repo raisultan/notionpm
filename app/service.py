@@ -6,6 +6,7 @@ from rocketry import Rocketry
 from app.config import load_config
 from app import setup
 from app.routes import setup_routes
+from app.jobs import setup_jobs
 
 scheduler = Rocketry(config={'task_execution': 'async'})
 
@@ -47,6 +48,7 @@ def init_app(config: dict) -> web.Application:
     app.cleanup_ctx.extend(client_context)
     app.on_startup.extend(on_startup)
     app.on_shutdown.extend([stop_polling, shutdown_rocketry])
+    setup_jobs(app, scheduler)
 
     return app
 
