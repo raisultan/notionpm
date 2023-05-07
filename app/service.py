@@ -4,7 +4,7 @@ import signal
 from aiohttp import web
 from app.notifications import app as notification_app
 
-from app.initializer import bot
+from app.initializer import bot, redis
 from app.dispatcher import setup_dispatcher, connect_notion
 
 dp = setup_dispatcher()
@@ -31,6 +31,7 @@ async def main():
 
 async def shutdown(signal, loop):
     print(f"\nReceived {signal.name} signal, shutting down...")
+    await redis.close()
     notification_app.cancel()
 
     dp.stop_polling()
