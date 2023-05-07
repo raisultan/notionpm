@@ -80,9 +80,13 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
         new_page_props = new_page['properties']
         page_property_changes = []
         for prop in props:
-            if old_page_props[prop] != new_page_props[prop]:
-                old_value, new_value = track_change_on_property(old_page_props[prop], new_page_props[prop])
-                page_property_changes.append(PropertyChange(prop, old_value, new_value))
+            try:
+                if old_page_props[prop] != new_page_props[prop]:
+                    old_value, new_value = track_change_on_property(old_page_props[prop], new_page_props[prop])
+                    page_property_changes.append(PropertyChange(prop, old_value, new_value))
+            except Exception as ex:
+                logger.error(f'Error while tracking changes in property {prop}: {ex}')
+                continue
         if page_property_changes:
             db_changes.append(
                 PageChange(
