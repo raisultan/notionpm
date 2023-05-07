@@ -10,7 +10,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 
 from app.commands.abstract import AbstractCommand
-from v0_1.notion_oauth import NotionOAuth
+from app.notion_oauth import NotionOAuth
 from app.storage import Storage
 
 

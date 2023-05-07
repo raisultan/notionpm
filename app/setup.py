@@ -25,7 +25,7 @@ from app.commands.toggle_notifications import ToggleNotificationsCommand
 from app.middleware import ForceUserSetupMiddleware
 from app.notion import NotionClient
 from app.storage import Storage
-from v0_1.notion_oauth import NotionOAuth
+from app.notion_oauth import NotionOAuth
 
 
 
