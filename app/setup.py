@@ -1,10 +1,10 @@
 import re
 
-from aiogram import Dispatcher
+from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.filters import Regexp
-from aiogram.types import Message, ContentType
-
-from app.initializer import bot, storage
+from aiogram.types import ContentType
+from aiohttp.web import Application
+from redis.asyncio import ConnectionPool, Redis
 
 from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
@@ -22,89 +22,111 @@ from app.commands.set_notifications import (
     SetupNotificationsCommand,
 )
 from app.commands.toggle_notifications import ToggleNotificationsCommand
-from app.initializer import bot, notion_oauth
 from app.middleware import ForceUserSetupMiddleware
 from app.notion import NotionClient
+from app.storage import Storage
+from v0_1.notion_oauth import NotionOAuth
 
 
-async def send_emojis_command(message: Message):
-    emojis = "😀 😃 😄 😁 😆"
-    await bot.send_message(
-        message.chat.id,
-        emojis,
+
+async def redis(app: Application):
+    pool = ConnectionPool.from_url("redis://localhost:6379")
+    app['redis'] = Redis(connection_pool=pool)
+    yield
+    await pool.disconnect()
+
+
+async def bot(app: Application):
+    app['bot'] = Bot(token=app['config']['bot_token'])
+    yield
+    await app['bot'].close()
+
+
+async def storage(app: Application):
+    app['storage'] = Storage(redis)
+
+
+async def notion_oauth(app: Application):
+    app['notion_oauth'] = NotionOAuth(
+        storage=storage,
+        client_id=app['config']['notion_client_id'],
+        client_secret=app['config']['notion_client_secret'],
+        redirect_uri=app['config']['notion_redirect_uri'],
     )
 
 
-def setup_dispatcher():
+async def dispatcher(app: Application):
+    app['dispatcher'] = Dispatcher(app['bot'])
+
+
+async def commands(app: Application):
     toggle_notifications = ToggleNotificationsCommand(
-        bot=bot,
-        storage=storage,
+        bot=app['bot'],
+        storage=app['storage'],
     )
     setup_notifications = SetupNotificationsCommand(
-        bot=bot,
+        bot=app['bot'],
         next=toggle_notifications,
-        storage=storage,
+        storage=app['storage'],
     )
     choose_properties = ChoosePropertiesCommand(
-        bot=bot,
+        bot=app['bot'],
         next=setup_notifications,
-        storage=storage,
+        storage=app['storage'],
         notion=NotionClient,
     )
     choose_database = ChooseDatabaseCommand(
-        bot=bot,
+        bot=app['bot'],
         next=choose_properties,
-        storage=storage,
+        storage=app['storage'],
         notion=NotionClient,
     )
     connect_notion = ConnectNotionCommand(
-        bot=bot,
+        bot=app['bot'],
         next=choose_database,
-        storage=storage,
-        notion_oauth=notion_oauth,
+        storage=app['storage'],
+        notion_oauth=app['notion_oauth'],
     )
-    start = StartCommand(bot)
+    start = StartCommand(app['bot'])
 
-    dp = Dispatcher(bot)
-
-    dp.register_message_handler(send_emojis_command, commands=["emojis"])
-    dp.register_message_handler(
+    app['connect_notion'] = connect_notion
+    app['dispatcher'].register_message_handler(
         start.execute,
         commands=["start"],
     )
-    dp.register_message_handler(
+    app['dispatcher'].register_message_handler(
         connect_notion.execute,
         commands=["login"],
     )
-    dp.register_message_handler(
+    app['dispatcher'].register_message_handler(
         choose_database.execute,
         commands=["choose_database"],
     )
-    dp.register_callback_query_handler(
+    app['dispatcher'].register_callback_query_handler(
         choose_database.handle_callback,
         ChooseDatabaseCallback.filter()
     )
-    dp.register_message_handler(
+    app['dispatcher'].register_message_handler(
         choose_properties.execute,
         commands=["choose_properties"],
     )
-    dp.register_callback_query_handler(
+    app['dispatcher'].register_callback_query_handler(
         choose_properties.handle_callback,
         ChoosePropertyCallback.filter(),
     )
-    dp.register_callback_query_handler(
+    app['dispatcher'].register_callback_query_handler(
         choose_properties.handle_finish,
         DonePropertySelectingCallback.filter(),
     )
-    dp.register_message_handler(
+    app['dispatcher'].register_message_handler(
         setup_notifications.execute,
         commands=["set_notification"],
     )
-    dp.register_callback_query_handler(
+    app['dispatcher'].register_callback_query_handler(
         setup_notifications.handle_private_messages,
         SetupNotificationsCallback.filter(),
     )
-    dp.register_message_handler(
+    app['dispatcher'].register_message_handler(
         setup_notifications.handle_group_chat,
         content_types=[ContentType.NEW_CHAT_MEMBERS],
     )
@@ -112,7 +134,9 @@ def setup_dispatcher():
         r'^(Pause notifications ⏸️|Unpause notifications ⏯️)$',
         re.IGNORECASE
     )
-    dp.message_handler(Regexp(toggle_notifications_pattern))(toggle_notifications.execute)
+    app['dispatcher'].message_handler(
+        Regexp(toggle_notifications_pattern)
+    )(toggle_notifications.execute)
 
     setup_commands = (
         connect_notion,
@@ -120,6 +144,4 @@ def setup_dispatcher():
         choose_properties,
         setup_notifications,
     )
-    dp.middleware.setup(ForceUserSetupMiddleware(bot, setup_commands))
-
-    return dp
+    app['dispatcher'].middleware.setup(ForceUserSetupMiddleware(bot, setup_commands))
