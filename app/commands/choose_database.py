@@ -65,6 +65,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             await self._storage.set_user_db_state(db_id, db_state)
 
             await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
+            await self.execute_next_if_applicable(message)
             return None
 
         inline_keyboard = []
