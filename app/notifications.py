@@ -1,7 +1,8 @@
 import logging
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from datetime import datetime
+from typing import Any, Optional
 from html import escape
 
 from aiogram.types import ParseMode
@@ -14,6 +15,16 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def to_user_friendly_dt(date_string: Optional[str]) -> str:
+    if not date_string:
+        return ''
+
+    if len(date_string) > 10:
+        dt = datetime.fromisoformat(date_string)
+        date_string = dt.strftime("%Y-%m-%d %l:%M%p").replace(":00", "").strip()
+    return date_string
 
 
 @dataclass
@@ -102,11 +113,21 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
         new = new['status']['name']
         return old, new
     elif old['type'] == 'date':
-        old_start = old['date']['start'] if old['date'] else None
-        new_start = new['date']['start'] if new['date'] else None
-        old_end = old['date']['end'] if old['date'] else None
-        new_end = new['date']['end'] if new['date'] else None
-        return f'{old_start} -> {old_end}', f'{new_start} -> {new_end}'
+        old_start = to_user_friendly_dt(old['date']['start'] if old['date'] else None)
+        new_start = to_user_friendly_dt(new['date']['start'] if new['date'] else None)
+        old_end = to_user_friendly_dt(old['date']['end'] if old['date'] else None)
+        new_end = to_user_friendly_dt(new['date']['end'] if new['date'] else None)
+        # old value
+        if old_start and not old_end:
+            old = old_start
+        else:
+            old = f'{old_start} to {old_end}'
+        # new value
+        if new_start and not new_end:
+            new = new_start
+        else:
+            new = f'{new_start} to {new_end}'
+        return old, new
     elif old['type'] == 'people':
         old = [person['name'] for person in old['people']]
         new = [person['name'] for person in new['people']]
