@@ -1,5 +1,3 @@
-from typing import Any
-
 from aiogram import Bot
 from aiogram.types import (
     ParseMode,
@@ -7,16 +5,14 @@ from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Chat,
-    CallbackQuery,
-    User,
 )
 from aiohttp import web
 from aiohttp.web_request import Request
 
-from app.initializer import BOT_URL
 from app.commands.abstract import AbstractCommand
-from v0_1.notion_oauth import NotionOAuth
+from app.notion_oauth import NotionOAuth
 from app.storage import Storage
+
 
 
 class ConnectNotionCommand(AbstractCommand):
@@ -57,6 +53,6 @@ class ConnectNotionCommand(AbstractCommand):
         if chat_id:
             message = Message(chat=Chat(id=int(chat_id), type='private'))
             await self.execute_next_if_applicable(message)
-            return web.HTTPFound(BOT_URL)
+            return web.HTTPFound(request.app['config']['bot_url'])
         else:
             return web.Response(status=400)
