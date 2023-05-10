@@ -1,10 +1,12 @@
 import re
+import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.filters import Regexp
 from aiogram.types import ContentType
 from aiohttp.web import Application
 from redis.asyncio import ConnectionPool, Redis
+from rocketry import Rocketry
 
 from app.commands.start import StartCommand
 from app.commands.connect_notion import ConnectNotionCommand
@@ -27,6 +29,29 @@ from app.notion import NotionClient
 from app.storage import Storage
 from app.notion_oauth import NotionOAuth
 
+
+scheduler = Rocketry(config={'task_execution': 'async'})
+
+async def start_rocketry(app: Application) -> None:
+    app['rocketry_task'] = asyncio.create_task(scheduler.serve())
+
+
+async def shutdown_rocketry(app: Application) -> None:
+    scheduler.session.shut_down()
+    app['rocketry_task'].cancel()
+
+
+async def start_polling(app: Application) -> None:
+    app['polling_task'] = asyncio.create_task(app['dispatcher'].start_polling())
+
+
+async def stop_polling(app: Application) -> None:
+    app['polling_task'].cancel()
+    try:
+        await app['polling_task']
+    except asyncio.CancelledError:
+        pass
+    await app['dispatcher'].wait_closed()
 
 
 async def redis(app: Application):
