@@ -131,8 +131,8 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
             new = f'{new_start} to {new_end}'
     elif old['type'] == 'people':
         emoji = '🦹‍♀️'
-        old = [person['name'] for person in old['people']]
-        new = [person['name'] for person in new['people']]
+        old = ', '.join([person['name'] for person in old['people']])
+        new = ', '.join([person['name'] for person in new['people']])
     elif old['type'] == 'url':
         emoji = '🔗'
         old = old['url']
