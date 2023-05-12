@@ -109,10 +109,14 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
         emoji = '🔎'
         old = old['title'][0]['plain_text']
         new = new['title'][0]['plain_text']
-    elif old['type'] in ('status', 'select'):
+    elif old['type'] == 'status':
         emoji = '🚦'
         old = old['status']['name']
         new = new['status']['name']
+    elif old['type'] == 'select':
+        emoji = '🚦'
+        old = old['select']['name']
+        new = new['select']['name']
     elif old['type'] == 'date':
         emoji = '📅'
         old_start = to_user_friendly_dt(old['date']['start'] if old['date'] else None)
