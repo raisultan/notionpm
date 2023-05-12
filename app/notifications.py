@@ -109,7 +109,7 @@ def track_change_on_property(old: dict, new: dict) -> tuple:
         emoji = '🔎'
         old = old['title'][0]['plain_text']
         new = new['title'][0]['plain_text']
-    elif old['type'] == 'status':
+    elif old['type'] in ('status', 'select'):
         emoji = '🚦'
         old = old['status']['name']
         new = new['status']['name']
