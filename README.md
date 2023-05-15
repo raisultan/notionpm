@@ -39,7 +39,7 @@ mkdir /root/redis-data
 1. Run the Redis container with RDB configuration: Run the following command to start a Redis container with RDB persistence enabled. Replace `/root/redis-data` with the path to the directory you created in step 3. You can also adjust the time interval and the number of write operations that should trigger a snapshot, as needed.
 
 ```bash
-docker run --name notionpm-redis -p 6379:6379 -v /root/redis-data:/data -d redis redis-server --save 60 1
+docker run --name notionpm-redis -p 6379:6379 -v /root/redis-data:/data -d redis redis-server --save 60 1 --slave-read-only no
 
 ```
 
@@ -73,7 +73,7 @@ docker stop notionpm-redis
 1. Restart the Redis container with existing data: To restart the Redis container and load the existing RDB snapshot, run the same command as in step 4:
 
 ```bash
-docker run --name notionpm-redis -p 6379:6379 -v /root/redis-data:/data -d redis redis-server --save 60 1
+docker run --name notionpm-redis -p 6379:6379 -v /root/redis-data:/data -d redis redis-server --save 60 1 --slave-read-only no
 
 ```
 
