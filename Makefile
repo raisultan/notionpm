@@ -5,3 +5,11 @@ start-redis:
 start-app:
 	@echo "Starting app..."
 	python3 -m app.service
+
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t npm .
+
+docker-start:
+	@echo "Starting Docker..."
+	docker run -d -p 8080:8080 npm
