@@ -1,20 +1,14 @@
 import logging
-import os
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from datetime import datetime
+from typing import Any, Optional
 from html import escape
 
-from aiogram import Bot
 from aiogram.types import ParseMode
-from dotenv import load_dotenv
-from rocketry import Rocketry
-from rocketry.conds import every
+from aiohttp.web import Application
 
-from app.dispatcher import storage
 from app.notion import NotionClient
-
-load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,14 +16,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-bot = Bot(token=os.environ["BOT_TOKEN"])
+
+def to_user_friendly_dt(date_string: Optional[str]) -> str:
+    if not date_string:
+        return ''
+
+    if len(date_string) > 10:
+        dt = datetime.fromisoformat(date_string)
+        date_string = dt.strftime("%Y-%m-%d %l:%M%p").replace(":00", "").strip()
+    return date_string
 
 
 @dataclass
 class PropertyChange:
     name: str
-    old_value: Any
-    new_value: Any
+    old_value: str
+    new_value: str
+    emoji: str
 
 
 @dataclass
@@ -82,8 +85,11 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
         for prop in props:
             try:
                 if old_page_props[prop] != new_page_props[prop]:
-                    old_value, new_value = track_change_on_property(old_page_props[prop], new_page_props[prop])
-                    page_property_changes.append(PropertyChange(prop, old_value, new_value))
+                    emoji, old_value, new_value = track_change_on_property(
+                        old_page_props[prop],
+                        new_page_props[prop],
+                    )
+                    page_property_changes.append(PropertyChange(prop, old_value, new_value, emoji))
             except Exception as ex:
                 logger.error(f'Error while tracking changes in property {prop}: {ex}')
                 continue
@@ -100,30 +106,46 @@ def track_db_changes(old: list[dict], new: list[dict], props: list[str]) -> list
 
 def track_change_on_property(old: dict, new: dict) -> tuple:
     if old['type'] == 'title':
+        emoji = '🔎'
         old = old['title'][0]['plain_text']
         new = new['title'][0]['plain_text']
-        return old, new
     elif old['type'] == 'status':
+        emoji = '🚦'
         old = old['status']['name']
         new = new['status']['name']
-        return old, new
+    elif old['type'] == 'select':
+        emoji = '🚦'
+        old = old['select']['name']
+        new = new['select']['name']
     elif old['type'] == 'date':
-        old_start = old['date']['start'] if old['date'] else None
-        new_start = new['date']['start'] if new['date'] else None
-        old_end = old['date']['end'] if old['date'] else None
-        new_end = new['date']['end'] if new['date'] else None
-        return f'{old_start} -> {old_end}', f'{new_start} -> {new_end}'
+        emoji = '📅'
+        old_start = to_user_friendly_dt(old['date']['start'] if old['date'] else None)
+        new_start = to_user_friendly_dt(new['date']['start'] if new['date'] else None)
+        old_end = to_user_friendly_dt(old['date']['end'] if old['date'] else None)
+        new_end = to_user_friendly_dt(new['date']['end'] if new['date'] else None)
+        # old value
+        if old_start and not old_end:
+            old = old_start
+        else:
+            old = f'{old_start} to {old_end}'
+        # new value
+        if new_start and not new_end:
+            new = new_start
+        else:
+            new = f'{new_start} to {new_end}'
     elif old['type'] == 'people':
-        old = [person['name'] for person in old['people']]
-        new = [person['name'] for person in new['people']]
-        return old, new
+        emoji = '🦹‍♀️'
+        old = ', '.join([person['name'] for person in old['people']])
+        new = ', '.join([person['name'] for person in new['people']])
     elif old['type'] == 'url':
+        emoji = '🔗'
         old = old['url']
         new = new['url']
         return old, new
     else:
-        return 'unknown', 'unknown'
-
+        emoji = '🤷‍♀️'
+        old, new = 'unknown', 'unknown'
+    return emoji, old, new
 
 def get_page_name(page: dict) -> str:
     title_prop = page['properties']['Name']['title']
@@ -141,11 +163,11 @@ def escape_html(any: Any) -> str:
     return escape(str(any))
 
 
-def create_properties_changed_message_with_button(page_change: PageChange) -> tuple:
+def create_properties_changed_message(page_change: PageChange) -> tuple:
     messages = []
     for field_change in page_change.field_changes:
         field_message = (
-            f"<b>{escape_html(field_change.name)}</b>: "
+            f"{field_change.emoji} <b>{escape_html(field_change.name)}</b>: "
             f"{escape_html(str(field_change.old_value))} → "
             f"{escape_html(str(field_change.new_value))}\n\n"
         )
@@ -158,10 +180,10 @@ def create_properties_changed_message_with_button(page_change: PageChange) -> tu
     return message
 
 
-app = Rocketry()
+async def track_changes_for_all(app: Application):
+    storage = app['storage']
+    bot = app['bot']
 
-@app.task(every('10 seconds'))
-async def track_changes_for_all():
     logger.info('Tracking changes for all users...')
     active_notification_chat_ids = await storage.get_all_active_notification_chat_ids()
     if not active_notification_chat_ids:
@@ -200,7 +222,7 @@ async def track_changes_for_all():
         for page in added_pages:
             page_name = get_page_name(page)
             page_url = get_page_url(page)
-            added_message = f"🗿 New page added: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
+            added_message = f"🌱 New page added: <a href='{escape_html(page_url)}'>{escape_html(page_name)}</a>"
             await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
 
         for page in removed_pages:
@@ -211,7 +233,7 @@ async def track_changes_for_all():
 
         # Send messages for changes
         for page_change in changes:
-            change_message = create_properties_changed_message_with_button(page_change)
+            change_message = create_properties_changed_message(page_change)
             await bot.send_message(
                 chat_id,
                 change_message,
