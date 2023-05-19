@@ -12,4 +12,6 @@ def load_config() -> dict:
         'notion_redirect_uri': os.environ["NOTION_REDIRECT_URI"],
         'bot_url': os.environ["BOT_URL"],
         'bot_token': os.environ["BOT_TOKEN"],
+        'redis_cluster_enabled': os.environ["REDIS_CLUSTER_ENABLED"],
+        'redis_url': os.environ["REDIS_URL"],
     }

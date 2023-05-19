@@ -5,7 +5,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.filters import Regexp
 from aiogram.types import ContentType
 from aiohttp.web import Application
-from redis.asyncio import ConnectionPool, Redis
+from redis.asyncio import Redis
+from redis.asyncio.cluster import RedisCluster
 from rocketry import Rocketry
 
 from app.commands.start import StartCommand
@@ -55,10 +56,17 @@ async def stop_polling(app: Application) -> None:
 
 
 async def redis(app: Application):
-    pool = ConnectionPool.from_url("redis://localhost:6379")
-    app['redis'] = Redis(connection_pool=pool)
+    cluster_enabled = app['config']['redis_cluster_enabled']
+    url = app['config']['redis_url']
+    if cluster_enabled:
+        redis_class = RedisCluster
+    else:
+        redis_class = Redis
+
+    redis = redis_class.from_url(url)
+    app['redis'] = redis
     yield
-    await pool.disconnect()
+    await redis.close()
 
 
 async def bot(app: Application):
