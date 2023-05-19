@@ -23,6 +23,7 @@ class ChoosePropertiesCommand(AbstractCommand):
     SUPPORTED_PROPERTY_TYPES: Final[list[str]] = [
         'title',
         'status',
+        'select',
         'date',
         'people',
         'url',

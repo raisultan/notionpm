@@ -17,13 +17,6 @@ class Storage:
             return None
         return token.decode('utf-8')
 
-    # TODO: need to be reworked, chat_id = user_id, we need notification_chat_ids also
-    async def get_notification_user_ids(self) -> list:
-        user_ids = await self._redis.keys('db_id_*')
-        if not user_ids:
-            return []
-        return [user_id.decode('utf-8').split('_id_')[1] for user_id in user_ids]
-
     async def set_user_db_id(self, chat_id: str, db_id: str) -> None:
         await self._redis.set(f'db_id_{chat_id}', db_id)
 
