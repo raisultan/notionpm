@@ -55,7 +55,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             db = databases[0]
             db_id = db.id
             await self._storage.set_user_db_id(message.chat.id, db.id)
-            sent_message = await self._bot.send_message(
+            await self._bot.send_message(
                 message.chat.id,
                 f"Yeah, default database has been set to {db.title} 🎉",
             )
@@ -98,7 +98,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         db_id = data.get("db_id")
 
         await self._storage.set_user_db_id(query.message.chat.id, db_id)
-        sent_message = await self._bot.send_message(
+        await self._bot.send_message(
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
