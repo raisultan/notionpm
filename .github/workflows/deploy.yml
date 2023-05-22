@@ -48,7 +48,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-          sudo docker compose -f /home/ec2-user/docker-compose.yml down
-          sudo docker compose -f /home/ec2-user/docker-compose.yml up -d
+          sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml down
+          sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml up -d
