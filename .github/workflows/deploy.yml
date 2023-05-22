@@ -48,7 +48,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker-compose -f /home/ec2-user/docker-compose.yml down
-          docker-compose -f /home/ec2-user/docker-compose.yml up -d
+          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          sudo docker compose -f /home/ec2-user/docker-compose.yml down
+          sudo docker compose -f /home/ec2-user/docker-compose.yml up -d
