@@ -51,4 +51,4 @@ jobs:
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml down
-          sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml up -d
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }} ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }} IMAGE_TAG=${{ github.sha }} sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml up -d
