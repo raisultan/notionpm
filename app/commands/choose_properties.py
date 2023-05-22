@@ -152,7 +152,7 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self.execute(query.message)
             return None
         else:
-            sent_message = await self._bot.send_message(
+            await self._bot.send_message(
                 chat_id,
                 f"Selected properties: {', '.join(tracked_properties)}",
                 reply_markup=types.ReplyKeyboardRemove(),
