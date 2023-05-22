@@ -11,16 +11,16 @@ class Storage:
     async def set_user_access_token(self, chat_id: str, access_token: str) -> None:
         await self._redis.set(f'access_token_{chat_id}', access_token)
 
-    async def get_user_access_token(self, chat_id: str) -> Optional[str]:
+    async def get_user_access_token(self, chat_id: int) -> Optional[str]:
         token = await self._redis.get(f'access_token_{chat_id}')
         if not token:
             return None
         return token.decode('utf-8')
 
-    async def set_user_db_id(self, chat_id: str, db_id: str) -> None:
+    async def set_user_db_id(self, chat_id: int, db_id: str) -> None:
         await self._redis.set(f'db_id_{chat_id}', db_id)
 
-    async def get_user_db_id(self, chat_id: str) -> Optional[str]:
+    async def get_user_db_id(self, chat_id: int) -> Optional[str]:
         db_id = await self._redis.get(f'db_id_{chat_id}')
         if not db_id:
             return None
@@ -35,28 +35,28 @@ class Storage:
             return None
         return json.loads(db_state)
 
-    async def set_user_tracked_properties(self, chat_id: str, tracked_properties: list) -> None:
+    async def set_user_tracked_properties(self, chat_id: int, tracked_properties: list) -> None:
         await self._redis.set(f'tracked_properties_{chat_id}', json.dumps(tracked_properties))
 
-    async def get_user_tracked_properties(self, chat_id: str) -> Optional[list]:
+    async def get_user_tracked_properties(self, chat_id: int) -> Optional[list]:
         tracked_properties = await self._redis.get(f'tracked_properties_{chat_id}')
         if not tracked_properties:
             return None
         return json.loads(tracked_properties)
 
-    async def set_tracked_properties_message_id(self, chat_id: str, message_id: int) -> None:
+    async def set_tracked_properties_message_id(self, chat_id: int, message_id: int) -> None:
         await self._redis.set(f'tracked_properties_message_id_{chat_id}', message_id)
 
-    async def get_tracked_properties_message_id(self, chat_id: str) -> Optional[int]:
+    async def get_tracked_properties_message_id(self, chat_id: int) -> Optional[int]:
         message_id = await self._redis.get(f'tracked_properties_message_id_{chat_id}')
         if not message_id:
             return None
         return int(message_id)
 
-    async def delete_tracked_properties_message_id(self, chat_id: str) -> None:
+    async def delete_tracked_properties_message_id(self, chat_id: int) -> None:
         await self._redis.delete(f'tracked_properties_message_id_{chat_id}')
 
-    async def get_connect_message_id(self, chat_id: str) -> Optional[int]:
+    async def get_connect_message_id(self, chat_id: int) -> Optional[int]:
         message_id = await self._redis.get(f'sent_connect_message_id_{chat_id}')
         if not message_id:
             return None
@@ -90,7 +90,7 @@ class Storage:
         active_chat_ids = await self._redis.smembers(key)
         return [int(chat_id.decode('utf-8')) for chat_id in active_chat_ids]
 
-    async def set_user_private_chat_id(self, user_id: int, chat_id: str) -> None:
+    async def set_user_private_chat_id(self, user_id: int, chat_id: int) -> None:
         key = f"user:{user_id}:private_chat_id"
         await self._redis.set(key, chat_id)
 
