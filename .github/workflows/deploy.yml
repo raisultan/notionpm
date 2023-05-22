@@ -51,7 +51,17 @@ jobs:
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           sudo docker compose -f /home/ubuntu/notionpm/docker-compose.yml down
+
           echo ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }} > /home/ubuntu/notionpm/.env
           echo ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }} >> /home/ubuntu/notionpm/.env
           echo IMAGE_TAG=${{ github.sha }} >> /home/ubuntu/notionpm/.env
+
+          echo NOTION_CLIENT_ID=${{ secrets.NOTION_CLIENT_ID }} >> /home/ubuntu/notionpm/.env
+          echo NOTION_CLIENT_SECRET=${{ secrets.NOTION_CLIENT_SECRET }} >> /home/ubuntu/notionpm/.env
+          echo NOTION_REDIRECT_URI=${{ secrets.NOTION_REDIRECT_URI }} >> /home/ubuntu/notionpm/.env
+          echo BOT_URL=${{ secrets.BOT_URL }} >> /home/ubuntu/notionpm/.env
+          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> /home/ubuntu/notionpm/.env
+          echo REDIS_CLUSTER_ENABLED=${{ secrets.REDIS_CLUSTER_ENABLED }} >> /home/ubuntu/notionpm/.env
+          echo REDIS_URL=${{ secrets.REDIS_URL }} >> /home/ubuntu/notionpm/.env
+
           sudo docker compose --env-file /home/ubuntu/notionpm/.env -f /home/ubuntu/notionpm/docker-compose.yml up -d
