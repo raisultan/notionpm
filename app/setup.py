@@ -129,7 +129,7 @@ async def commands(app: Application):
     )
     app['dispatcher'].register_message_handler(
         connect_notion.execute,
-        commands=["login"],
+        commands=["connect"],
     )
     app['dispatcher'].register_message_handler(
         choose_database.execute,
@@ -153,7 +153,7 @@ async def commands(app: Application):
     )
     app['dispatcher'].register_message_handler(
         setup_notifications.execute,
-        commands=["set_notification"],
+        commands=["set_notifications"],
     )
     app['dispatcher'].register_callback_query_handler(
         setup_notifications.handle_private_messages,
