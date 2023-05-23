@@ -66,7 +66,6 @@ class ChoosePropertiesCommand(AbstractCommand):
         }
         property_buttons = []
 
-        await self.remove_temporary_messages(chat_id)
         for prop_name, _ in supported_properties.items():
             button = InlineKeyboardButton(
                 prop_name,
@@ -167,3 +166,4 @@ class ChoosePropertiesCommand(AbstractCommand):
                 f"Properties being tracked: {', '.join(tracked_properties)}",
             )
             await self.execute_next_if_applicable(query.message)
+        await self.remove_temporary_messages(chat_id)
