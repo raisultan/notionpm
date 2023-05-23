@@ -130,4 +130,6 @@ class Storage:
     async def get_temporary_message_ids(self, chat_id: int) -> list:
         key = f"user:{chat_id}:temporary_message_ids"
         message_ids = await self._redis.smembers(key)
+        if not message_ids:
+            return []
         return [int(message_id.decode('utf-8')) for message_id in message_ids]
