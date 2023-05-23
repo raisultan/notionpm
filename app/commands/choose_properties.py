@@ -40,10 +40,11 @@ class ChoosePropertiesCommand(AbstractCommand):
         self._notion = notion
 
     async def is_applicable(self, message: Message) -> bool:
-        return True
+        db_id = await self._storage.get_user_db_id(message.chat.id)
+        return bool(db_id)
 
     async def is_finished(self, message: Message) -> bool:
-        return False
+        return bool(await self._storage.get_user_tracked_properties(message.chat.id))
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
