@@ -10,7 +10,7 @@ from redis.asyncio.cluster import RedisCluster
 from rocketry import Rocketry
 
 from app.commands.start import StartCommand
-from app.commands.connect_notion import ConnectNotionCommand
+from app.commands.connect import ConnectNotionCommand
 from app.commands.choose_database import (
     ChooseDatabaseCallback,
     ChooseDatabaseCommand,
