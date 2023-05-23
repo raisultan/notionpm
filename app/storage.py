@@ -87,9 +87,9 @@ class Storage:
     async def get_user_notification_chat_id(self, chat_id: int) -> Optional[str]:
         key = f"user:{chat_id}:notification_chat_id"
         notification_chat_id = await self._redis.get(key)
-        if notification_chat_id:
-            return notification_chat_id.decode('utf-8')
-        return None
+        if not notification_chat_id:
+            return None
+        return notification_chat_id.decode('utf-8')
 
     async def set_user_notification_is_active(self, chat_id: int, is_active: bool) -> None:
         key = "active_notifications"

@@ -19,9 +19,8 @@ class SetupNotificationsCommand(AbstractCommand):
         return bool(tracked_properties)
 
     async def is_finished(self, message: Message) -> bool:
-        notification_type = await self._storage.get_user_notification_chat_id(message.chat.id)
-        chat_id = await self._storage.get_user_notification_chat_id(message.chat.id)
-        return notification_type and chat_id
+        notification_chat_id = await self._storage.get_user_notification_chat_id(message.chat.id)
+        return bool(notification_chat_id)
 
     async def execute(self, message: Message) -> None:
         chat_id = message.chat.id
