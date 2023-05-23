@@ -62,6 +62,12 @@ class Storage:
             return None
         return json.loads(tracked_properties)
 
+    async def remove_user_tracked_properties(self, chat_id: int) -> None:
+        db_id = await self.get_user_db_id(chat_id)
+        if not db_id:
+            return None
+        await self._redis.delete(f'tracked_properties_{chat_id}_{db_id}')
+
     async def set_tracked_properties_message_id(self, chat_id: int, message_id: int) -> None:
         await self._redis.set(f'tracked_properties_message_id_{chat_id}', message_id)
 
