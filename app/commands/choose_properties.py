@@ -164,6 +164,6 @@ class ChoosePropertiesCommand(AbstractCommand):
         else:
             await self._bot.send_message(
                 chat_id,
-                f"Selected properties: {', '.join(tracked_properties)}",
+                f"Properties being tracked: {', '.join(tracked_properties)}",
             )
             await self.execute_next_if_applicable(query.message)
