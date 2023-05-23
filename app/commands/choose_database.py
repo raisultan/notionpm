@@ -54,9 +54,9 @@ class ChooseDatabaseCommand(AbstractCommand):
         if len(databases) == 1:
             db = databases[0]
             db_id = db.id
-            await self._storage.set_user_db_id(message.chat.id, db.id)
+            await self._storage.set_user_db_id(chat_id, db.id)
             await self._bot.send_message(
-                message.chat.id,
+                chat_id,
                 f"Hooray! Default database has been set to {db.title} 🎉",
             )
 
@@ -77,16 +77,17 @@ class ChooseDatabaseCommand(AbstractCommand):
             inline_keyboard.append([button])
 
         markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
-        current_db_id = await self._storage.get_user_db_id(message.chat.id)
+        current_db_id = await self._storage.get_user_db_id(chat_id)
         if current_db_id:
             text = (
                 "You have already chosen a default database. "
                 "You can choose a new one from the list below:"
             )
-            sent_message = await self._bot.send_message(message.chat.id, text, reply_markup=markup)
+            sent_message = await self._bot.send_message(chat_id, text, reply_markup=markup)
+            await self._storage.remove_user_tracked_properties(chat_id)
         else:
             sent_message = await self._bot.send_message(
-                message.chat.id,
+                chat_id,
                 "Choose the default database for team tasks:",
                 reply_markup=markup,
             )
