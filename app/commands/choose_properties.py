@@ -94,6 +94,16 @@ class ChoosePropertiesCommand(AbstractCommand):
         )
         await self._storage.add_temporaty_message_id(chat_id, instruction_message.message_id)
 
+        tracked_properties = await self._storage.get_user_tracked_properties(message.chat.id)
+        if tracked_properties:
+            text = f"Current tracked properties: {', '.join(tracked_properties)}"
+        else:
+            text = "No properties have been selected."
+
+        sent_message = await self._bot.send_message(chat_id, text=text)
+        await self._storage.set_tracked_properties_message_id(chat_id, sent_message.message_id)
+        await self._storage.add_temporaty_message_id(chat_id, sent_message.message_id)
+
     async def handle_callback(self, query: CallbackQuery) -> None:
         chat_id = query.message.chat.id
         data = ChoosePropertyCallback.parse(query.data)
