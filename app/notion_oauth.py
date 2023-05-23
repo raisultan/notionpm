@@ -59,7 +59,7 @@ class NotionOAuth:
             chat_id = None
         return chat_id
 
-    def generate_connect_url(self, chat_id: str) -> str:
+    def generate_connect_url(self, chat_id: int) -> str:
         return (
             "https://api.notion.com/v1/oauth/authorize"
             f"?client_id={self.client_id}"

@@ -14,7 +14,6 @@ from app.notion_oauth import NotionOAuth
 from app.storage import Storage
 
 
-
 class ConnectNotionCommand(AbstractCommand):
     def __init__(
         self,
