@@ -165,5 +165,5 @@ class ChoosePropertiesCommand(AbstractCommand):
                 chat_id,
                 f"Properties being tracked: {', '.join(tracked_properties)}",
             )
+            await self.remove_temporary_messages(chat_id)
             await self.execute_next_if_applicable(query.message)
-        await self.remove_temporary_messages(chat_id)
