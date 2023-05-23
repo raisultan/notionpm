@@ -28,7 +28,7 @@ class SetupNotificationsCommand(AbstractCommand):
         bot_username = (await self._bot.me).username
         add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
 
-        await self.remove_temporary_messages_from_previous(chat_id)
+        await self.remove_temporary_messages(chat_id)
         private_button = InlineKeyboardButton(
             "Stay here 👨‍💻",
             callback_data=SetupNotificationsCallback.new(notification_type="private")
@@ -54,7 +54,7 @@ class SetupNotificationsCommand(AbstractCommand):
         if notification_type == "private":
             await self._storage.set_user_notification_chat_id(chat_id, chat_id)
             await self._storage.set_user_notification_is_active(chat_id, True)
-            await self.remove_temporary_messages_from_previous(chat_id)
+            await self.remove_temporary_messages(chat_id)
             keyboard = await self._next.get_notifications_keyboard(chat_id)
             await self._bot.send_message(
                     chat_id,
@@ -81,7 +81,7 @@ class SetupNotificationsCommand(AbstractCommand):
                     chat_id,
                     "Heey guys! I'm here to help you track changes in your Notion workspace 🤖",
                 )
-            await self.remove_temporary_messages_from_previous(private_chat_id)
+            await self.remove_temporary_messages(private_chat_id)
             keyboard = await self._next.get_notifications_keyboard(private_chat_id)
             await self._bot.send_message(
                     private_chat_id,

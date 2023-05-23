@@ -50,7 +50,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             await self.execute(message)
             return None
 
-        await self.remove_temporary_messages_from_previous(chat_id)
+        await self.remove_temporary_messages(chat_id)
         if len(databases) == 1:
             db = databases[0]
             db_id = db.id
