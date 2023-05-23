@@ -155,6 +155,5 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._bot.send_message(
                 chat_id,
                 f"Selected properties: {', '.join(tracked_properties)}",
-                reply_markup=types.ReplyKeyboardRemove(),
             )
             await self.execute_next_if_applicable(query.message)
