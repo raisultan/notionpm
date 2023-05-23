@@ -57,7 +57,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             await self._storage.set_user_db_id(message.chat.id, db.id)
             await self._bot.send_message(
                 message.chat.id,
-                f"Yeah, default database has been set to {db.title} 🎉",
+                f"Hooray! Default database has been set to {db.title} 🎉",
             )
 
             access_token = await self._storage.get_user_access_token(chat_id)
@@ -102,6 +102,7 @@ class ChooseDatabaseCommand(AbstractCommand):
             chat_id,
             f"Default database has been set to {data.get('db_title')} 🎉",
         )
+        await self.remove_temporary_messages(chat_id)
 
         access_token = await self._storage.get_user_access_token(chat_id)
         user_notion = self._notion(auth=access_token)

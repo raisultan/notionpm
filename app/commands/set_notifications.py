@@ -28,7 +28,6 @@ class SetupNotificationsCommand(AbstractCommand):
         bot_username = (await self._bot.me).username
         add_to_group_url = f"https://t.me/{bot_username}?startgroup=0"
 
-        await self.remove_temporary_messages(chat_id)
         private_button = InlineKeyboardButton(
             "Stay here 👨‍💻",
             callback_data=SetupNotificationsCallback.new(notification_type="private")
