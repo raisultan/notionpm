@@ -152,6 +152,7 @@ class ChoosePropertiesCommand(AbstractCommand):
             await self._bot.delete_message(chat_id, sent_message_id)
             await self._storage.delete_tracked_properties_message_id(chat_id)
 
+        await self.remove_temporary_messages(chat_id)
         if not tracked_properties:
             sent_message = await self._bot.send_message(
                 chat_id,
@@ -165,5 +166,4 @@ class ChoosePropertiesCommand(AbstractCommand):
                 chat_id,
                 f"Properties being tracked: {', '.join(tracked_properties)}",
             )
-            await self.remove_temporary_messages(chat_id)
             await self.execute_next_if_applicable(query.message)
