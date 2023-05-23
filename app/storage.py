@@ -1,7 +1,12 @@
 import json
+import os
 from typing import Optional
 
+from dotenv import load_dotenv
 from redis import asyncio as aioredis
+
+load_dotenv()
+TEST_MODE = os.environ.get('TEST_MODE', 'False') == 'True'
 
 
 class Storage:
@@ -12,6 +17,9 @@ class Storage:
         await self._redis.set(f'access_token_{chat_id}', access_token)
 
     async def get_user_access_token(self, chat_id: int) -> Optional[str]:
+        if TEST_MODE:
+            return os.environ['TEST_ACCESS_TOKEN']
+
         token = await self._redis.get(f'access_token_{chat_id}')
         if not token:
             return None
@@ -21,6 +29,9 @@ class Storage:
         await self._redis.set(f'db_id_{chat_id}', db_id)
 
     async def get_user_db_id(self, chat_id: int) -> Optional[str]:
+        if TEST_MODE:
+            return os.environ['NOTION_DB_ID']
+
         db_id = await self._redis.get(f'db_id_{chat_id}')
         if not db_id:
             return None
