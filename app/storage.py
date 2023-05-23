@@ -47,10 +47,17 @@ class Storage:
         return json.loads(db_state)
 
     async def set_user_tracked_properties(self, chat_id: int, tracked_properties: list) -> None:
-        await self._redis.set(f'tracked_properties_{chat_id}', json.dumps(tracked_properties))
+        db_id = await self.get_user_db_id(chat_id)
+        if not db_id:
+            return None
+        await self._redis.set(f'tracked_properties_{chat_id}_{db_id}', json.dumps(tracked_properties))
 
     async def get_user_tracked_properties(self, chat_id: int) -> Optional[list]:
-        tracked_properties = await self._redis.get(f'tracked_properties_{chat_id}')
+        db_id = await self.get_user_db_id(chat_id)
+        if not db_id:
+            return None
+
+        tracked_properties = await self._redis.get(f'tracked_properties_{chat_id}_{db_id}')
         if not tracked_properties:
             return None
         return json.loads(tracked_properties)
