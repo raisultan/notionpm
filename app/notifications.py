@@ -1,8 +1,9 @@
+from __future__ import annotations
 import logging
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from html import escape
 
 from aiogram.types import ParseMode
@@ -242,3 +243,171 @@ async def track_changes_for_all(app: Application):
 
         logger.info(f'Changes for {chat_id}: {changes}')
     logger.info('Done!')
+
+
+"""
+Entities:
+- Page
+    - id
+    - created_time
+    - last_edited_time
+    - created_by
+    - last_edited_by
+    - cover
+    - icon
+    - parent
+    - archived
+    - url
+    - properties
+- Property
+    - id
+    - type
+    - content
+"""
+
+"""
+[
+    {
+        "object": "page",
+        "id": "d9aecf28-2a7e-48d8-adc8-e474a9e7c761",
+        "created_time": "2023-05-10T16:55:00.000Z",
+        "last_edited_time": "2023-05-12T20:04:00.000Z",
+        "created_by": {"object": "user", "id": "346a04af-8943-4e0d-940d-3fd186020991"},
+        "last_edited_by": {
+            "object": "user",
+            "id": "346a04af-8943-4e0d-940d-3fd186020991",
+        },
+        "cover": None,
+        "icon": None,
+        "parent": {
+            "type": "database_id",
+            "database_id": "2678441b-ed57-4ac5-8c33-bdf33650b6c1",
+        },
+        "archived": False,
+        "properties": {
+            "Assign": {
+                "id": "HsYh",
+                "type": "people",
+                "people": [
+                    {
+                        "object": "user",
+                        "id": "346a04af-8943-4e0d-940d-3fd186020991",
+                        "name": "raisultan",
+                        "avatar_url": "https://s3-us-west-2.amazonaws.com/public.notion-static.com/2c4ed0ff-1a60-413d-b32e-0f08288cf854/Screenshot_2021-06-18_at_13.41.45.png",
+                        "type": "person",
+                        "person": {"email": "raisultan@proton.me"},
+                    },
+                    {
+                        "object": "user",
+                        "id": "bd83f89f-62c0-4193-b9ae-ed2ff84eaaec",
+                        "name": "Alex",
+                        "avatar_url": "https://s3-us-west-2.amazonaws.com/public.notion-static.com/2fa16287-9705-4ef0-82fa-050be2ec859c/_-1.jpg",
+                        "type": "person",
+                        "person": {"email": "oklimova-ki18@stud.sfu-kras.ru"},
+                    },
+                ],
+            },
+            "Email": {"id": "NVsM", "type": "email", "email": None},
+            "Due date": {
+                "id": "PJ%5D%3C",
+                "type": "date",
+                "date": {
+                    "start": "2023-05-08T14:00:00.000+02:00",
+                    "end": "2023-05-27T23:00:00.000+02:00",
+                    "time_zone": None,
+                },
+            },
+            "Status": {
+                "id": "XdYK",
+                "type": "status",
+                "status": {
+                    "id": "57fefebb-e836-4b0f-b964-80a3a8ddba08",
+                    "name": "Done",
+                    "color": "green",
+                },
+            },
+            "some url": {"id": "Yir%3C", "type": "url", "url": None},
+            "Related Notion Bot Test": {
+                "id": "ZsHE",
+                "type": "relation",
+                "relation": [],
+                "has_more": False,
+            },
+            "Name": {
+                "id": "title",
+                "type": "title",
+                "title": [
+                    {
+                        "type": "text",
+                        "text": {"content": "New task in complete", "link": None},
+                        "annotations": {
+                            "bold": False,
+                            "italic": False,
+                            "strikethrough": False,
+                            "underline": False,
+                            "code": False,
+                            "color": "default",
+                        },
+                        "plain_text": "New task in complete",
+                        "href": None,
+                    }
+                ],
+            },
+        },
+        "url": "https://www.notion.so/New-task-in-complete-d9aecf282a7e48d8adc8e474a9e7c761",
+    },
+]
+"""
+
+
+@dataclass(frozen=True)
+class Property:
+    id: str
+    type: str
+    content: Optional[Union[list, dict]]
+
+    @classmethod
+    def from_json(cls, json: dict) -> 'Property':
+        return cls(
+            id=json['id'],
+            type=json['type'],
+            content=json[json['type']],
+        )
+
+@dataclass(frozen=True)
+class Page:
+    id: str
+    created_time: str
+    last_edited_time: str
+    created_by: dict
+    last_edited_by: dict
+    cover: Optional[dict]
+    icon: Optional[dict]
+    parent: Optional[dict]
+    archived: bool
+    url: str
+    properties: list[Property]
+
+    @property
+    def name(self) -> str:
+        for property in self.properties:
+            if property.type == 'title' and property.content:
+                return property.content[0]['plain_text']
+        return 'Unnamed page 🤷‍♀️'
+
+    @classmethod
+    def from_json(cls, json: dict) -> 'Page':
+        properties = [Property.from_json(property) for property in json['properties']]
+        return cls(
+            id=json['id'],
+            created_time=json['created_time'],
+            last_edited_time=json['last_edited_time'],
+            created_by=json['created_by'],
+            last_edited_by=json['last_edited_by'],
+            cover=json['cover'],
+            icon=json['icon'],
+            parent=json['parent'],
+            archived=json['archived'],
+            url=json['url'],
+            properties=properties,
+        )
