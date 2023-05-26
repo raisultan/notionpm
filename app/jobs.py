@@ -2,7 +2,7 @@ from aiohttp.web import Application
 from rocketry import Rocketry
 from rocketry.conds import every
 
-from app.notifications import track_changes_for_all
+from app.tracker.track import track_changes_for_all
 
 
 def setup_jobs(app: Application, scheduler: Rocketry) -> None:
