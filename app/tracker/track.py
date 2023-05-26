@@ -1,16 +1,15 @@
 from __future__ import annotations
 import asyncio
 import logging
-from copy import deepcopy
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from html import escape
 
 from aiogram.types import ParseMode
 from aiohttp.web import Application
 
 from app.notion import NotionClient
+from app.tracker.entities import Page, PageChange, Property, PropertyChange
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,114 +28,36 @@ def to_user_friendly_dt(date_string: Optional[str]) -> str:
     return date_string
 
 
-@dataclass(frozen=True)
-class Property:
-    id: str
-    name: str
-    type: str
-    content: Optional[Union[list, dict]]
-
-    @classmethod
-    def from_json(cls, name: str, json: dict) -> 'Property':
-        return cls(
-            id=json['id'],
-            name=name,
-            type=json['type'],
-            content=json[json['type']],
-        )
-
-
-@dataclass(frozen=True)
-class Page:
-    id: str
-    created_time: str
-    last_edited_time: str
-    created_by: dict
-    last_edited_by: dict
-    cover: Optional[dict]
-    icon: Optional[dict]
-    parent: Optional[dict]
-    archived: bool
-    url: str
-    properties: list[Property]
-
-    @property
-    def name(self) -> str:
-        for property in self.properties:
-            if property.type == 'title' and property.content:
-                return property.content[0]['plain_text']
-        return 'Unnamed page 🤷‍♀️'
-
-    @classmethod
-    def from_json(cls, json: dict) -> 'Page':
-        properties = []
-        for name, content in json['properties'].items():
-            properties.append(Property.from_json(name, content))
-
-        return cls(
-            id=json['id'],
-            created_time=json['created_time'],
-            last_edited_time=json['last_edited_time'],
-            created_by=json['created_by'],
-            last_edited_by=json['last_edited_by'],
-            cover=json['cover'],
-            icon=json['icon'],
-            parent=json['parent'],
-            archived=json['archived'],
-            url=json['url'],
-            properties=properties,
-        )
-
-
-@dataclass
-class PropertyChange:
-    name: str
-    old_value: str
-    new_value: str
-    emoji: str
-
-
-@dataclass
-class PageChange:
-    name: str
-    url: str
-    field_changes: list[PropertyChange]
-
-
 def track_db_changes(old: list[Page], new: list[Page], tracked_properties: list[str]):
-    old, new = deepcopy(old), deepcopy(new)
-    if not old:
-        old = []
-
     # get page id lists for old and new
     old_ids = [page.id for page in old] if old else []
     new_ids = [page.id for page in new]
 
     # get added and possibly changed pages from new list
     added_page_ids = [page_id for page_id in new_ids if page_id not in old_ids]
-    print(f'Added: {added_page_ids}')
+    logger.info(f'Added: {added_page_ids}')
     added_pages = []
-    new_for_tracking_props = []
+    changed_pages_from_new = []
     for page in new:
         if page.id in added_page_ids:
             added_pages.append(page)
         else:
-            new_for_tracking_props.append(page)
+            changed_pages_from_new.append(page)
 
     # get removed and possibly changed pages from old list
     removed_page_ids = [page_id for page_id in old_ids if page_id not in new_ids]
-    print(f'Removed: {removed_page_ids}')
+    logger.info(f'Removed: {removed_page_ids}')
     removed_pages = []
-    old_for_tracking_props = []
+    changed_pages_from_old = []
     for page in old:
         if page.id in removed_page_ids:
             removed_pages.append(page)
         else:
-            old_for_tracking_props.append(page)
+            changed_pages_from_old.append(page)
 
     # track changes in properties of new and old
-    sorted_old = sorted(old_for_tracking_props, key=lambda page: page.id)
-    sorted_new = sorted(new_for_tracking_props, key=lambda page: page.id)
+    sorted_old = sorted(changed_pages_from_old, key=lambda page: page.id)
+    sorted_new = sorted(changed_pages_from_new, key=lambda page: page.id)
 
     db_changes = []
     for old_page, new_page in zip(sorted_old, sorted_new):
@@ -210,13 +131,13 @@ def escape_html(any: Any) -> str:
     return escape(str(any))
 
 
-def create_properties_changed_message(page_change: PageChange) -> tuple:
+def create_properties_changed_message(page_change: PageChange) -> str:
     messages = []
     for field_change in page_change.field_changes:
         field_message = (
             f"{field_change.emoji} <b>{escape_html(field_change.name)}</b>: "
-            f"{escape_html(str(field_change.old_value))} → "
-            f"{escape_html(str(field_change.new_value))}\n\n"
+            f"{escape_html(field_change.old_value)} → "
+            f"{escape_html(field_change.new_value)}\n\n"
         )
         messages.append(field_message)
 
