@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import logging
 from copy import deepcopy
 from dataclasses import dataclass
@@ -143,13 +144,13 @@ def track_db_changes(old: list[Page], new: list[Page], tracked_properties: list[
         new_page_props = [property for property in new_page.properties if property.name in tracked_properties]
         page_property_changes = []
         for old_property, new_property in zip(old_page_props, new_page_props):
-            # try:
-            if old_property.content != new_property.content:
-                emoji, old_value, new_value = track_change_on_property(old_property, new_property)
-                page_property_changes.append(PropertyChange(old_property.name, old_value, new_value, emoji))
-            # except Exception as ex:
-            #     logger.error(f'Error while tracking changes in property {old_property.name}: {ex}')
-            #     continue
+            try:
+                if old_property.content != new_property.content:
+                    emoji, old_value, new_value = track_change_on_property(old_property, new_property)
+                    page_property_changes.append(PropertyChange(old_property.name, old_value, new_value, emoji))
+            except Exception as ex:
+                logger.error(f'Error while tracking changes in property {old_property.name}: {ex}')
+                continue
 
         if page_property_changes:
             db_changes.append(
@@ -225,10 +226,56 @@ def create_properties_changed_message(page_change: PageChange) -> tuple:
     )
     return message
 
+async def track_changes(app: Application, user_chat_id: int):
+    storage = app['storage']
+    bot = app['bot']
+
+    chat_id = await storage.get_user_notification_chat_id(user_chat_id)
+    if not chat_id:
+        logger.warning(
+            f'No notification chat id found for {user_chat_id}! Skipping...'
+        )
+
+    access_token = await storage.get_user_access_token(user_chat_id)
+    db_id = await storage.get_user_db_id(user_chat_id)
+    track_props = await storage.get_user_tracked_properties(user_chat_id)
+
+    if not access_token or not db_id or not track_props:
+        logger.warning(f'Setup not completed for {user_chat_id}! Skipping...')
+        return
+
+    notion = NotionClient(auth=access_token)
+    old_db_state = await storage.get_user_db_state(db_id)
+    new_db_state = notion.databases.query(database_id=db_id)
+    old = [Page.from_json(page) for page in old_db_state]
+    new = [Page.from_json(page) for page in new_db_state['results']]
+    changes, added_pages, removed_pages = track_db_changes(
+        old,
+        new,
+        track_props,
+    )
+    await storage.set_user_db_state(db_id, new_db_state)
+
+    for page in added_pages:
+        added_message = f"🌱 New page added: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
+        await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
+
+    for page in removed_pages:
+        removed_message = f"🗑️ Page removed: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
+        await bot.send_message(chat_id, removed_message, parse_mode=ParseMode.HTML)
+
+    for page_change in changes:
+        change_message = create_properties_changed_message(page_change)
+        await bot.send_message(
+            chat_id,
+            change_message,
+            parse_mode=ParseMode.HTML,
+        )
+    logger.info(f'Changes for {chat_id}: {changes}')
+
 
 async def track_changes_for_all(app: Application):
     storage = app['storage']
-    bot = app['bot']
 
     logger.info('Tracking changes for all users...')
     active_notification_chat_ids = await storage.get_all_active_notification_chat_ids()
@@ -236,53 +283,5 @@ async def track_changes_for_all(app: Application):
         logger.warning('No chat ids found!')
         return
 
-    for user_chat_id in active_notification_chat_ids:
-        chat_id = await storage.get_user_notification_chat_id(user_chat_id)
-        if not chat_id:
-            logger.warning(
-                f'No notification chat id found for {user_chat_id}! Skipping...'
-            )
-
-        access_token = await storage.get_user_access_token(user_chat_id)
-        db_id = await storage.get_user_db_id(user_chat_id)
-        track_props = await storage.get_user_tracked_properties(user_chat_id)
-
-        if not access_token or not db_id or not track_props:
-            logger.warning(f'Setup not completed for {user_chat_id}! Skipping...')
-            continue
-
-        try:
-            notion = NotionClient(auth=access_token)
-            old_db_state = await storage.get_user_db_state(db_id)
-            new_db_state = notion.databases.query(database_id=db_id)
-            old = [Page.from_json(page) for page in old_db_state]
-            new = [Page.from_json(page) for page in new_db_state['results']]
-            changes, added_pages, removed_pages = track_db_changes(
-                old,
-                new,
-                track_props,
-            )
-            await storage.set_user_db_state(db_id, new_db_state)
-        except Exception as e:
-            logger.exception(f'Exception for {chat_id}: {repr(e)}')
-            continue
-
-        for page in added_pages:
-            added_message = f"🌱 New page added: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
-            await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
-
-        for page in removed_pages:
-            removed_message = f"🗑️ Page removed: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
-            await bot.send_message(chat_id, removed_message, parse_mode=ParseMode.HTML)
-
-        # Send messages for changes
-        for page_change in changes:
-            change_message = create_properties_changed_message(page_change)
-            await bot.send_message(
-                chat_id,
-                change_message,
-                parse_mode=ParseMode.HTML,
-            )
-
-        logger.info(f'Changes for {chat_id}: {changes}')
-    logger.info('Done!')
+    tasks = [track_changes(app, user_chat_id) for user_chat_id in active_notification_chat_ids]
+    asyncio.gather(*tasks)
