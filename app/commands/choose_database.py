@@ -79,9 +79,13 @@ class ChooseDatabaseCommand(AbstractCommand):
         markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
         current_db_id = await self._storage.get_user_db_id(chat_id)
         if current_db_id:
+            current_db_title = None
+            for db in databases:
+                if db.id == current_db_id:
+                    current_db_title = db.title
             text = (
-                "You have already chosen a default database. "
-                "You can choose a new one from the list below:"
+                f"You have already chosen a default database: {current_db_title}.\n"
+                "You can choose a another one from the list below:"
             )
             sent_message = await self._bot.send_message(chat_id, text, reply_markup=markup)
             await self._storage.remove_user_tracked_properties(chat_id)
