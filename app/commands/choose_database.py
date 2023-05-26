@@ -79,7 +79,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
         current_db_id = await self._storage.get_user_db_id(chat_id)
         if current_db_id:
-            current_db_title = None
+            current_db_title = '🤷‍♀️'
             for db in databases:
                 if db.id == current_db_id:
                     current_db_title = db.title
