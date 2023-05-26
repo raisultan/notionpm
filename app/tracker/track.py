@@ -67,7 +67,7 @@ def track_db_changes(old: list[Page], new: list[Page], tracked_properties: list[
         for old_property, new_property in zip(old_page_props, new_page_props):
             try:
                 if old_property.content != new_property.content:
-                    emoji, old_value, new_value = track_change_on_property(old_property, new_property)
+                    emoji, old_value, new_value = compose_property_diff(old_property, new_property)
                     page_property_changes.append(PropertyChange(old_property.name, old_value, new_value, emoji))
             except Exception as ex:
                 logger.error(f'Error while tracking changes in property {old_property.name}: {ex}')
@@ -84,19 +84,19 @@ def track_db_changes(old: list[Page], new: list[Page], tracked_properties: list[
     return db_changes, added_pages, removed_pages
 
 
-def track_change_on_property(old: Property, new: Property) -> tuple:
+def compose_property_diff(old: Property, new: Property) -> tuple[str, str, str]:
     if old.type == 'title':
         emoji = '🔎'
-        old = old.content[0]['plain_text']
-        new = new.content[0]['plain_text']
+        old_value = old.content[0]['plain_text']
+        new_value = new.content[0]['plain_text']
     elif old.type == 'status':
         emoji = '🚦'
-        old = old.content['name']
-        new = new.content['name']
+        old_value = old.content['name']
+        new_value = new.content['name']
     elif old.type == 'select':
         emoji = '🚦'
-        old = old.content['name']
-        new = new.content['name']
+        old_value = old.content['name']
+        new_value = new.content['name']
     elif old.type == 'date':
         emoji = '📅'
         old_start = to_user_friendly_dt(old.content['start'] if old.content else None)
@@ -105,33 +105,33 @@ def track_change_on_property(old: Property, new: Property) -> tuple:
         new_end = to_user_friendly_dt(new.content['end'] if new.content else None)
         # old value
         if old_start and not old_end:
-            old = old_start
+            old_value = old_start
         else:
-            old = f'{old_start} to {old_end}'
+            old_value = f'{old_start} to {old_end}'
         # new value
         if new_start and not new_end:
-            new = new_start
+            new_value = new_start
         else:
-            new = f'{new_start} to {new_end}'
+            new_value = f'{new_start} to {new_end}'
     elif old.type == 'people':
         emoji = '🦹‍♀️'
-        old = ', '.join([person['name'] for person in old.content])
-        new = ', '.join([person['name'] for person in new.content])
+        old_value = ', '.join([person['name'] for person in old.content])
+        new_value = ', '.join([person['name'] for person in new.content])
     elif old.type == 'url':
         emoji = '🔗'
-        old = old.content
-        new = new.content
+        old_value = old.content
+        new_value = new.content
     else:
         emoji = '🤷‍♀️'
-        old, new = 'unknown', 'unknown'
-    return emoji, old, new
+        old_value, new_value = 'unknown', 'unknown'
+    return emoji, old_value, new_value
 
 
 def escape_html(any: Any) -> str:
     return escape(str(any))
 
 
-def create_properties_changed_message(page_change: PageChange) -> str:
+def compose_page_change(page_change: PageChange) -> tuple[str, str]:
     messages = []
     for field_change in page_change.field_changes:
         field_message = (
@@ -142,10 +142,22 @@ def create_properties_changed_message(page_change: PageChange) -> str:
         messages.append(field_message)
 
     message = (
-        f"📬 Changes in <a href='{escape_html(page_change.url)}'>{escape_html(page_change.name)}</a>:\n\n"
+        f"📬 Changes in <a href='{escape_html(page_change.url)}'>"
+        f"{escape_html(page_change.name)}</a>:\n\n"
         f"{''.join(messages)}"
     )
-    return message
+    return message, ParseMode.HTML
+
+
+def compose_page_added(page: Page) -> tuple[str, str]:
+    text = f"🌱 New page added: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
+    return text, ParseMode.HTML
+
+
+def compose_page_removed(page: Page) -> tuple[str, str]:
+    text = f"🗑️ Page removed: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
+    return text, ParseMode.HTML
+
 
 async def track_changes(app: Application, user_chat_id: int):
     storage = app['storage']
@@ -170,28 +182,20 @@ async def track_changes(app: Application, user_chat_id: int):
     new_db_state = notion.databases.query(database_id=db_id)
     old = [Page.from_json(page) for page in old_db_state]
     new = [Page.from_json(page) for page in new_db_state['results']]
-    changes, added_pages, removed_pages = track_db_changes(
-        old,
-        new,
-        track_props,
-    )
+    changes, added_pages, removed_pages = track_db_changes(old, new, track_props)
     await storage.set_user_db_state(db_id, new_db_state)
 
     for page in added_pages:
-        added_message = f"🌱 New page added: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
-        await bot.send_message(chat_id, added_message, parse_mode=ParseMode.HTML)
+        added_message, parse_mode = compose_page_added(page)
+        await bot.send_message(chat_id, added_message, parse_mode=parse_mode)
 
     for page in removed_pages:
-        removed_message = f"🗑️ Page removed: <a href='{escape_html(page.url)}'>{escape_html(page.name)}</a>"
-        await bot.send_message(chat_id, removed_message, parse_mode=ParseMode.HTML)
+        removed_message, parse_mode = compose_page_removed(page)
+        await bot.send_message(chat_id, removed_message, parse_mode=parse_mode)
 
     for page_change in changes:
-        change_message = create_properties_changed_message(page_change)
-        await bot.send_message(
-            chat_id,
-            change_message,
-            parse_mode=ParseMode.HTML,
-        )
+        change_message, parse_mode = compose_page_change(page_change)
+        await bot.send_message(chat_id, change_message, parse_mode=parse_mode)
     logger.info(f'Changes for {chat_id}: {changes}')
 
 
