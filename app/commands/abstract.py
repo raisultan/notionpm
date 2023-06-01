@@ -36,6 +36,6 @@ class AbstractCommand:
         for message_id in message_ids:
             try:
                 await self._bot.delete_message(chat_id, message_id)
-                await self._storage.remove_temporary_message_id(chat_id, message_id)
             except Exception:
                 pass
+            await self._storage.remove_temporary_message_id(chat_id, message_id)
