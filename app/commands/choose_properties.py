@@ -51,8 +51,7 @@ class ChoosePropertiesCommand(AbstractCommand):
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
         if sent_message_id:
-            await self._bot.delete_message(chat_id, sent_message_id)
-            await self._storage.delete_tracked_properties_message_id(chat_id)
+            await self._delete_tracked_properties_message(chat_id, sent_message_id)
 
         access_token = await self._storage.get_user_access_token(message.chat.id)
         db_id = await self._storage.get_user_db_id(message.chat.id)
@@ -149,8 +148,7 @@ class ChoosePropertiesCommand(AbstractCommand):
 
         sent_message_id = await self._storage.get_tracked_properties_message_id(chat_id)
         if sent_message_id:
-            await self._bot.delete_message(chat_id, sent_message_id)
-            await self._storage.delete_tracked_properties_message_id(chat_id)
+            await self._delete_tracked_properties_message(chat_id, sent_message_id)
 
         await self.remove_temporary_messages(chat_id)
         if not tracked_properties:
@@ -167,3 +165,10 @@ class ChoosePropertiesCommand(AbstractCommand):
                 f"Properties being tracked: {', '.join(tracked_properties)}",
             )
             await self.execute_next_if_applicable(query.message)
+
+    async def _delete_tracked_properties_message(self, chat_id: int, sent_message_id: int) -> None:
+        try:
+            await self._bot.delete_message(chat_id, sent_message_id)
+        except exceptions.MessageToDeleteNotFound:
+            pass
+        await self._storage.delete_tracked_properties_message_id(chat_id)
