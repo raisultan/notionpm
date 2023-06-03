@@ -1,6 +1,8 @@
 import re
 import asyncio
+import logging
 
+import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.dispatcher.filters import Regexp
 from aiogram.types import ContentType
@@ -8,6 +10,7 @@ from aiohttp.web import Application
 from redis.asyncio import Redis
 from redis.asyncio.cluster import RedisCluster
 from rocketry import Rocketry
+from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 
 from app.commands.start import StartCommand
 from app.commands.connect import ConnectNotionCommand
@@ -29,6 +32,12 @@ from app.middleware import ForceUserSetupMiddleware
 from app.notion import NotionClient
 from app.storage import Storage
 from app.notion_oauth import NotionOAuth
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 scheduler = Rocketry(config={'task_execution': 'async'})
@@ -90,6 +99,19 @@ async def notion_oauth(app: Application):
 
 async def dispatcher(app: Application):
     app['dispatcher'] = Dispatcher(app['bot'])
+
+
+async def sentry(app: Application):
+    dsn = app['config']['sentry_dsn']
+    if not dsn:
+        logger.warning("Sentry DSN is not set, skipping Sentry setup")
+        return
+    sentry_sdk.init(
+        dsn=app['config']['sentry_dsn'],
+        integrations=[
+            AioHttpIntegration(),
+        ],
+    )
 
 
 async def commands(app: Application):
