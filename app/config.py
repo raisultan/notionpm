@@ -14,4 +14,5 @@ def load_config() -> dict:
         'bot_token': os.environ["BOT_TOKEN"],
         'redis_cluster_enabled': os.environ["REDIS_CLUSTER_ENABLED"] == 'True',
         'redis_url': os.environ["REDIS_URL"],
+        'sentry_dsn': os.environ["SENTRY_DSN"],
     }

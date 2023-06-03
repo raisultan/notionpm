@@ -63,5 +63,6 @@ jobs:
           echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> /home/ubuntu/notionpm/.env
           echo REDIS_CLUSTER_ENABLED=${{ secrets.REDIS_CLUSTER_ENABLED }} >> /home/ubuntu/notionpm/.env
           echo REDIS_URL=${{ secrets.REDIS_URL }} >> /home/ubuntu/notionpm/.env
+          echo SENTRY_DSN=${{ secrets.SENTRY_DSN }} >> /home/ubuntu/notionpm/.env
 
           sudo docker compose --env-file /home/ubuntu/notionpm/.env -f /home/ubuntu/notionpm/docker-compose.yml up -d
