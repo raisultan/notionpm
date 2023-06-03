@@ -12,6 +12,7 @@ def init_app(config: dict) -> web.Application:
     app['config'] = config
 
     on_startup = [
+        setup.sentry,
         setup.storage,
         setup.notion_oauth,
         setup.dispatcher,
