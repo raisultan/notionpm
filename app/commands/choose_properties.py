@@ -169,6 +169,6 @@ class ChoosePropertiesCommand(AbstractCommand):
     async def _delete_tracked_properties_message(self, chat_id: int, sent_message_id: int) -> None:
         try:
             await self._bot.delete_message(chat_id, sent_message_id)
-        except exceptions.MessageToDeleteNotFound:
+        except (exceptions.MessageToDeleteNotFound, exceptions.MessageCantBeDeleted):
             pass
         await self._storage.delete_tracked_properties_message_id(chat_id)
