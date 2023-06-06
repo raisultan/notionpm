@@ -50,6 +50,13 @@ class ConnectNotionCommand(AbstractCommand):
     async def handle_oauth(self, request: Request):
         chat_id = await self._notion_oauth.handle_oauth(request)
         if chat_id:
+            await self._bot.send_message(
+                chat_id,
+                "You have successfully connected your Notion workspace!🧑‍🚀",
+            )
+            await self._storage.remove_user_db_id(chat_id)
+            await self.remove_temporary_messages(chat_id)
+
             message = Message(chat=Chat(id=int(chat_id), type='private'))
             await self.execute_next_if_applicable(message)
             return web.HTTPFound(request.app['config']['bot_url'])

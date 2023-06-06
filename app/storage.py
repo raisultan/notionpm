@@ -37,6 +37,9 @@ class Storage:
             return None
         return db_id.decode('utf-8')
 
+    async def remove_user_db_id(self, chat_id: int) -> None:
+        await self._redis.delete(f'db_id_{chat_id}')
+
     async def set_user_db_state(self, db_id: str, db_state: dict) -> None:
         await self._redis.set(f'db_state_{db_id}', json.dumps(db_state['results']))
 
