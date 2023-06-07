@@ -88,7 +88,6 @@ class ChooseDatabaseCommand(AbstractCommand):
                 "You can choose a another one from the list below:"
             )
             sent_message = await self._bot.send_message(chat_id, text, reply_markup=markup)
-            await self._storage.remove_user_tracked_properties(chat_id)
         else:
             sent_message = await self._bot.send_message(
                 chat_id,
@@ -109,6 +108,7 @@ class ChooseDatabaseCommand(AbstractCommand):
         )
         await self.remove_temporary_messages(chat_id)
 
+        await self._storage.remove_user_tracked_properties(chat_id)
         access_token = await self._storage.get_user_access_token(chat_id)
         user_notion = self._notion(auth=access_token)
         db_state = user_notion.databases.query(database_id=db_id)
