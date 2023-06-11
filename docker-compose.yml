@@ -7,6 +7,14 @@ services:
     ports:
       - "8080:8080"
     restart: always
+    command: python -m app.service
+
+  tracker:
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+    volumes:
+      - /home/ubuntu/notionpm/.env:/app/.env
+    restart: always
+    command: python -m app.track
 
   redis:
     image: "redis:alpine"
