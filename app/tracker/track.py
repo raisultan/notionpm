@@ -61,7 +61,9 @@ def track_db_changes(old: list[Page], new: list[Page], tracked_properties: list[
                     emoji, old_value, new_value = compose_property_diff(old_property, new_property)
                     page_property_changes.append(PropertyChange(old_property.name, old_value, new_value, emoji))
             except Exception as ex:
-                logger.error(f'Error while tracking changes in property {old_property.name}: {ex}')
+                logger.error(
+                    f'Error while tracking changes in property {old_property.name}: {repr(ex)}'
+                )
                 continue
 
         if page_property_changes:
