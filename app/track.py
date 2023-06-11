@@ -2,7 +2,8 @@ from aiohttp import web
 
 from app import setup
 from app.config import load_config
-from app.routes import setup_routes
+from app.setup import scheduler
+from app.jobs import setup_jobs
 
 
 def init_app(config: dict) -> web.Application:
@@ -12,11 +13,7 @@ def init_app(config: dict) -> web.Application:
     on_startup = [
         setup.sentry,
         setup.storage,
-        setup.notion_oauth,
-        setup.dispatcher,
-        setup.commands,
-        setup_routes,
-        setup.start_polling,
+        setup.start_rocketry,
     ]
     client_context = [
         setup.bot,
@@ -24,7 +21,8 @@ def init_app(config: dict) -> web.Application:
     ]
     app.cleanup_ctx.extend(client_context)
     app.on_startup.extend(on_startup)
-    app.on_shutdown.extend([setup.stop_polling])
+    app.on_shutdown.extend([setup.shutdown_rocketry])
+    setup_jobs(app, scheduler)
 
     return app
 
@@ -33,7 +31,7 @@ def start() -> None:
     config = load_config()
     app = init_app(config)
 
-    web.run_app(app, port=8080, access_log=None)
+    web.run_app(app, port=8000, access_log=None)
 
 
 if __name__ == '__main__':
