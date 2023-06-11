@@ -25,8 +25,8 @@ class NotionClient(NotionCLI):
             if block['object'] == 'database':
                 try:
                     title = block['title'][0]['plain_text']
-                except KeyError:
-                    title = ""
+                except (KeyError, IndexError):
+                    title = "Couldn't get the title 🎅"
                 databases.append(
                     Database(
                         id=block['id'],
