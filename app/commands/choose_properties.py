@@ -139,7 +139,7 @@ class ChoosePropertiesCommand(AbstractCommand):
                     message_id=message_id,
                     text=new_text,
                 )
-            except exceptions.MessageNotModified:
+            except (exceptions.MessageNotModified, exceptions.MessageToEditNotFound):
                 pass
 
     async def handle_finish(self, query: CallbackQuery) -> None:
