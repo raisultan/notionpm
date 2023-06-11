@@ -70,9 +70,11 @@ class ChooseDatabaseCommand(AbstractCommand):
         inline_keyboard = []
 
         for db in databases:
+            escaped_title = db.title.replace(":", "-")
+            print('escaped_title', escaped_title)
             button = InlineKeyboardButton(
                 db.title,
-                callback_data=ChooseDatabaseCallback.new(db_id=db.id, db_title=db.title),
+                callback_data=ChooseDatabaseCallback.new(db_id=db.id, db_title=escaped_title),
             )
             inline_keyboard.append([button])
 
