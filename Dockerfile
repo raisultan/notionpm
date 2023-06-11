@@ -11,4 +11,4 @@ WORKDIR /app
 COPY . /app
 
 RUN poetry install
-CMD ["python", "-m", "app.service"]
+CMD ["placeholder"]
