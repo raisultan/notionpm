@@ -124,5 +124,7 @@ async def track_changes_for_all(app: Application):
         logger.warning('No chat ids found!')
         return
 
-    tasks = [track_changes(app, user_chat_id) for user_chat_id in active_notification_chat_ids]
+    tasks = []
+    for user_chat_id in active_notification_chat_ids:
+        tasks.append(asyncio.create_task(track_changes(app, user_chat_id)))
     asyncio.gather(*tasks)
