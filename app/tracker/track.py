@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from aiohttp.web import Application
+from httpx import HTTPStatusError
 
 from app.notion import NotionClient
 from app.tracker.entities import Page, PageChange, PropertyChange
@@ -97,7 +98,19 @@ async def track_changes(app: Application, user_chat_id: int):
 
     notion = NotionClient(auth=access_token)
     old_db_state = await storage.get_user_db_state(db_id)
-    new_db_state = notion.databases.query(database_id=db_id)
+    try:
+        new_db_state = notion.databases.query(database_id=db_id)
+    except HTTPStatusError as e:
+        logger.error(f'Error while querying database {db_id}: {repr(e)}')
+        await storage.remove_user_db_id(user_chat_id)
+        await bot.send_message(
+            "Oops, we haven't found your database in Notion 😢\n"
+            "Did you do something with it!?\n\n"
+            "Try to reconnect your workspace with /connect command 🥺",
+            user_chat_id,
+        )
+        return
+
     old = [Page.from_json(page) for page in old_db_state]
     new = [Page.from_json(page) for page in new_db_state['results']]
     changes, added_pages, removed_pages = track_db_changes(old, new, track_props)
