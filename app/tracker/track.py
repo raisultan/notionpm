@@ -109,6 +109,7 @@ async def track_changes(app: Application, user_chat_id: int):
             "Try to reconnect your workspace with /connect command 🥺",
             user_chat_id,
         )
+        return
     except ReadTimeout as e:
         logger.error(f'Took too long to track changes for {db_id}: {repr(e)}')
         return
