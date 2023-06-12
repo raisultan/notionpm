@@ -2,7 +2,8 @@ import asyncio
 import logging
 
 from aiohttp.web import Application
-from httpx import HTTPStatusError, ReadTimeout
+from httpx import ReadTimeout
+from notion_client.errors import APIResponseError
 
 from app.notion import NotionClient
 from app.tracker.entities import Page, PageChange, PropertyChange
@@ -100,7 +101,7 @@ async def track_changes(app: Application, user_chat_id: int):
     old_db_state = await storage.get_user_db_state(db_id)
     try:
         new_db_state = notion.databases.query(database_id=db_id)
-    except HTTPStatusError as e:
+    except APIResponseError as e:
         logger.error(f'Error while querying database {db_id}: {repr(e)}')
         await storage.remove_user_db_id(user_chat_id)
         await bot.send_message(
