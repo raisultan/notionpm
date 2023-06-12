@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiohttp.web import Application
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, ReadTimeout
 
 from app.notion import NotionClient
 from app.tracker.entities import Page, PageChange, PropertyChange
@@ -109,6 +109,8 @@ async def track_changes(app: Application, user_chat_id: int):
             "Try to reconnect your workspace with /connect command 🥺",
             user_chat_id,
         )
+    except ReadTimeout as e:
+        logger.error(f'Took too long to track changes for {db_id}: {repr(e)}')
         return
 
     old = [Page.from_json(page) for page in old_db_state]
