@@ -105,10 +105,10 @@ async def track_changes(app: Application, user_chat_id: int):
         logger.error(f'Error while querying database {db_id}: {repr(e)}')
         await storage.remove_user_db_id(user_chat_id)
         await bot.send_message(
+            user_chat_id,
             "Oops, we haven't found your database in Notion 😢\n"
             "Did you do something with it!?\n\n"
             "Try to reconnect your workspace with /connect command 🥺",
-            user_chat_id,
         )
         return
     except ReadTimeout as e:
